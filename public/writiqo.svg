@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 182.42 182.42">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #141414;
+        stroke: #231f20;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-2 {
+        fill: #a5b4fc;
+        font-family: SuperBasic, 'Super Basic';
+        font-size: 128px;
+      }
+    </style>
+  </defs>
+  <rect class="cls-1" x=".5" y=".5" width="181.42" height="181.42"/>
+  <text class="cls-2" transform="translate(41.99 130.12)"><tspan x="0" y="0">W</tspan></text>
+</svg>
