@@ -18,6 +18,10 @@ declare global {
             italic? : boolean,
             underline? : boolean,
             overline? : boolean,
+            align_left? : boolean,
+            align_right? : boolean,
+            align_center?: boolean,
+            align_justify? : boolean
         }
     };
     interface FormatTypes {

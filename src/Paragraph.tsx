@@ -58,7 +58,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         const leafIndex: number = getLeafIndexFromCaretPosition(caretPosition.current)
         const startLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength, true)
         const endLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current, true)
-        let style: "italic" | "bold" | "underline" | "" = ""
+        let style: "italic" | "bold" | "underline" | "overline" | "" = ""
 
         if (e.ctrlKey) {
             switch (e.key) {
@@ -72,6 +72,10 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
                 case "u":
                     style = "underline"
+                    break
+
+                case "o":
+                    style = "overline"
                     break
 
                 default:
@@ -120,7 +124,9 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         else {
             if ((e.key === "Backspace" || e.key === "Delete") && startLeafOffset == endLeafOffset) {
                 newModel[leafIndex].text = newModel[leafIndex].text.slice(0, startLeafOffset - 1) + newModel[leafIndex].text.slice(startLeafOffset, newModel[leafIndex].text.length)
+                if (newModel[leafIndex].text == "" && leafIndex != 0) newModel.splice(leafIndex,1)
                 caretPosition.current -= 1
+                console.log(newModel)
             }
             else {
                 newModel[leafIndex].text = newModel[leafIndex].text.slice(0, startLeafOffset) + newModel[leafIndex].text.slice(endLeafOffset, newModel[leafIndex].text.length)
@@ -169,9 +175,44 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         return () => observer.disconnect()
     }, [])
 
+    let groupedModel = []
+
+    function groupSimilar(style: "align_right" | "align_left" | "align_center" | "align_justify", startIndex: number) {
+        let similar = []
+
+        for (let i = startIndex; i < model.length; i++) {
+            const leaf = model[i];
+
+            if (leaf.styles?.[style]) {
+                similar.push(leaf)
+            }
+            else {
+                break
+            }
+        }
+
+        return similar
+    }
+
+    for (let i = 0; i < model.length; i++) {
+        const leaf = model[i];
+
+        if (leaf.styles?.align_right) {
+            const similar = groupSimilar("align_right",i)
+            groupedModel.push({"type" : "align_right", children : similar})
+            i += similar.length - 1 < 0 ? 0 : similar.length - 1
+        }
+        else {
+            groupedModel.push({"type" : "text", children : [leaf]})
+        }
+    }
+
+    console.log(groupedModel)
+
     return (
         <div id={useId()} suppressContentEditableWarning contentEditable={true} onKeyDown={keyDown} ref={thisTextArea} onBeforeInput={updateDomModel} className="textInput" onPaste={e => e.preventDefault()}>
             {model.map((leaf, i) => {
+
                 let styles: CSSProperties = {}
 
                 if (leaf.styles) {
@@ -188,10 +229,13 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                     })
                 }
 
-                return (<span key={i} style={styles}>
-                    {leaf.text}
-                </span>)
+                return (
+                    <span key={i} style={styles}>
+                        {leaf.text}
+                    </span>
+                )
+
             })}
-        </div>
+        </div >
     )
 }

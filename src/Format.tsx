@@ -22,12 +22,12 @@ export function getEditableContentDiv() {
 
 export default function Format({ model, setModel, style, advanced = undefined }: FormatTypes) {
 
-    if (!getEditableContentDiv()) return
-
+    const editableContentDiv = getEditableContentDiv()
+    if (!editableContentDiv) return
     
     function restoreSelection() {
         const selection = window.getSelection()
-        getEditableContentDiv()?.focus()
+        editableContentDiv?.focus()
         if (selection?.isCollapsed) {
             selection?.removeAllRanges()
             console.log(createRangeFromPositions(savedSelection.end - savedSelection.length, savedSelection.end))
@@ -37,8 +37,8 @@ export default function Format({ model, setModel, style, advanced = undefined }:
 
     restoreSelection()
 
-    let caretPosition = CaretPosition(getEditableContentDiv()!).pos
-    const editableContentDivId = getEditableContentDiv()!.id
+    let caretPosition = CaretPosition(editableContentDiv).pos
+    const editableContentDivId = editableContentDiv.id
 
     function getLeafIndexFromCaretPosition(caretPosition: number, getOffset: boolean = false) {
 
@@ -64,15 +64,26 @@ export default function Format({ model, setModel, style, advanced = undefined }:
     function createRangeFromPositions(start: number, end: number) {
         const range = document.createRange()
 
-        console.log(getEditableContentDiv(),getLeafIndexFromCaretPosition(start),getLeafIndexFromCaretPosition(start,true),start)
-        range.setStart(
-            getEditableContentDiv()!.children[getLeafIndexFromCaretPosition(start)].firstChild!,
-            getLeafIndexFromCaretPosition(start, true)
-        )
-        range.setEnd(
-            getEditableContentDiv()!.children[getLeafIndexFromCaretPosition(end)].firstChild!,
-            getLeafIndexFromCaretPosition(end, true)
-        )
+        if (editableContentDiv!.children[getLeafIndexFromCaretPosition(start)].firstChild) {
+            range.setStart(
+                editableContentDiv!.children[getLeafIndexFromCaretPosition(start)].firstChild!,
+                getLeafIndexFromCaretPosition(start, true)
+            )
+            range.setEnd(
+                editableContentDiv!.children[getLeafIndexFromCaretPosition(end)].firstChild!,
+                getLeafIndexFromCaretPosition(end, true)
+            )
+        }
+        else {
+            console.warn(
+                model,
+                editableContentDiv!.children,
+                editableContentDiv!.children[getLeafIndexFromCaretPosition(start)].firstChild!,
+                getLeafIndexFromCaretPosition(start),
+                getLeafIndexFromCaretPosition(start, true),
+                start
+            )
+        }
 
         return range
     }
@@ -168,6 +179,8 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         newModel.splice(leafIndex + 1, 0, { text: leaf.text.slice(startLeafOffset, endLeafOffset), styles: { ...leaf.styles, [style]: !leaf.styles[style], advanced : advancedStyles(leafIndex) } })
         newModel.splice(leafIndex + 2, 0, { text: leaf.text.slice(endLeafOffset, leaf.text.length), styles: leaf.styles })
         leaf.text = leaf.text.slice(0, startLeafOffset)
+
+        newModel = newModel.filter(item => item.text !== '')
     }
 
     setModel(newModel)

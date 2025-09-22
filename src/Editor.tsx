@@ -7,7 +7,7 @@ export default function Editor() {
     const [model, setModel] = useState<Leaf[]>([{ "text": "aaaa" }, { "text": "bbbb" }, { "text": "cccccccc", styles: { bold: true, italic: true } }, { "text": "dddd", styles: { italic: true } }, { "text": "eeee" }])
 
     document.addEventListener("keydown", (e) => {
-        if (e.ctrlKey && (e.key==="b" || e.key==="u" || e.key==="i")) {
+        if (e.ctrlKey && (e.key==="b" || e.key==="u" || e.key==="i" || e.key==="o")) {
             e.preventDefault()
         }
     }) 

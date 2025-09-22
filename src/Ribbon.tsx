@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect, type CSSProperties } from "react"
 import createFuzzySearch from '@nozbe/microfuzz'
 import { v4 as uuid4 } from "uuid"
-import Format, { getEditableContentDiv } from "./Format";
+import Format from "./Format";
 import { RgbaColorPicker, type RgbaColor } from "react-colorful";
-import {position as CaretPosition} from "caret-pos"
 
 function pressFlash(el: HTMLElement) {
     el.classList.remove("press-flash")
@@ -17,66 +16,12 @@ interface RibbonTypes {
 }
 
 export default function Ribbon({model,setModel} : RibbonTypes) {
-    const [fontSize, setFontSize] = useState(40)
-    const [prevSliderPosition, setPrevSliderPosition] = useState(0)
-    const cosmeticSlider = useRef<HTMLDivElement>(null)
-    const dragging = useRef(false)
-    const sliderStart = useRef(0)
-    const fontSizeIncrementDelay = useRef(0)
-
-
-
-    function changeFontSize(e: React.MouseEvent<HTMLDivElement>) {
-        if (e.ctrlKey === true && e.button === 0) {
-            const styleContainer = e.currentTarget
-
-            Format({
-                model,
-                setModel,
-                style: "none",
-                advanced: { "property": "fontSize", "value": fontSize, overwrite : true }
-            })
-
-            pressFlash(styleContainer)
-        }
-    }
-
-    function fontSizeMouseMove(e: React.MouseEvent<HTMLInputElement>) {
-        if (!dragging.current) return
-        e.currentTarget.readOnly = true;
-        window.getSelection()?.removeAllRanges()
-
-        const width = e.currentTarget.clientWidth
-
-        if (Math.abs(prevSliderPosition) > Math.abs((e.clientX - sliderStart.current) / width)) {
-            sliderStart.current = e.clientX
-        }
-
-        const sliderPosition = (e.clientX - sliderStart.current) / width
-
-        if (fontSizeIncrementDelay.current > 3) {
-            setFontSize(prev => prev + (sliderPosition > 0 ? 1 : -1))
-            fontSizeIncrementDelay.current = 0
-        }
-        else {
-            fontSizeIncrementDelay.current += 1
-        }
-        setPrevSliderPosition(sliderPosition)
-    }
-
-    function animateSlider(target: number) {
-        if (!cosmeticSlider.current) return
-
-        cosmeticSlider.current.parentElement!.style.transform = `translateY(${target == 1 ? 0 : -16}px)`
-        cosmeticSlider.current.style.opacity = target.toString()
-    }
-
     return (
         <div id="ribbon">
             <div style={{display : "flex", flexDirection : "column", gap : 5}}>
                 <span className="descriptor">Text Modifications</span>
                 <div style={{display : "flex", gap: 5}}>
-                    <ColorPickerButton src={"format_color_text.svg"} />
+                    <ColorPickerButton src={"format_color_text.svg"} style="color" model={model} setModel={setModel} />
                     <div className="formatContainer formatButtonContainer">
                         <FormatButton model={model} setModel={setModel} style="bold" />
                         <FormatButton model={model} setModel={setModel} style="strikethrough" />
@@ -85,7 +30,7 @@ export default function Ribbon({model,setModel} : RibbonTypes) {
                     </div>
                 </div>
                 <div style={{ display: "flex", gap: 5 }}>
-                    <ColorPickerButton src={"format_color_fill.svg"} />
+                    <ColorPickerButton src={"format_color_fill.svg"} style="backgroundColor" model={model} setModel={setModel} />
                     <FormatSlider model={model} setModel={setModel} style="letterSpacing" type="horizontal" unit="%" min={0} max={100} sensitivity={1} />
                     <div className="formatContainer formatButtonContainer">
                         <FormatButton model={model} setModel={setModel} style="list" />
@@ -104,34 +49,6 @@ export default function Ribbon({model,setModel} : RibbonTypes) {
                         <FormatButton model={model} setModel={setModel} style="align_justify" />
                         <FormatButton model={model} setModel={setModel} style="align_center" />
                     </div>
-                </div>
-            </div>
-
-            <div id="fontSizeContainer" className="ribbonContainer" onClick={changeFontSize}>
-                <label htmlFor="fontSize">Font Size</label>
-                <input type="number" id="fontSize" value={fontSize}
-                    onInput={e => setFontSize(Number(e.currentTarget.value))}
-                    onMouseDown={e => { dragging.current = true; sliderStart.current = e.clientX; animateSlider(1) }}
-                    onMouseUp={e => { dragging.current = false; e.currentTarget.readOnly = false; animateSlider(0) }}
-                    onMouseLeave={e => { dragging.current = false; e.currentTarget.readOnly = false; animateSlider(0) }}
-                    onMouseMove={fontSizeMouseMove}
-                />
-                <div className="cosmeticSliderWrapper">
-                    <div className="cosmeticSlider" ref={cosmeticSlider} style={{
-                        backgroundPositionX: Math.abs(prevSliderPosition * 100),
-                        rotate: prevSliderPosition > 0 ? "0deg" : "180deg"
-                    }} />
-                </div>
-            </div>
-
-            <div id="formatAlignContainer" className="ribbonContainer">
-                <label htmlFor="formatAlignButtons">Format Align</label>
-                <div id="formatAlignButtons">
-
-                    <button><img src={"format_align_left.svg"} /></button>
-                    <button><img src={"format_align_right.svg"} /></button>
-                    <button><img src={"format_align_justify.svg"} /></button>
-                    <button><img src={"format_align_center.svg"} /></button>
                 </div>
             </div>
         </div>
@@ -220,7 +137,12 @@ function FontDropdownContainer({ model, setModel }: {
     )
 }
 
-function ColorPickerButton({ src }: { src: string }) {
+function ColorPickerButton({ src, model, setModel, style }: {
+    src: string,
+    model: Leaf[],
+    setModel: React.Dispatch<React.SetStateAction<Leaf[]>>,
+    style : keyof CSSProperties
+}) {
     const [showPicker, setShowPicker] = useState<boolean>(false)
     const [coordinates, setCoordinates] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
     const [color, setColor] = useState<RgbaColor>({ r: 165, g: 180, b: 252, a: 1 })
@@ -229,11 +151,18 @@ function ColorPickerButton({ src }: { src: string }) {
     function onMouseDown(e : React.MouseEvent<HTMLDivElement, MouseEvent>) {
         e.stopPropagation()
         setShowPicker(true)
-        setCoordinates({x : e.clientX, y : e.clientY})
+        setCoordinates({ x: e.clientX, y: e.clientY })
     }
 
     function onChange(newColor : RgbaColor) {
         setColor(newColor)
+
+        Format({
+            model,
+            setModel,
+            style : "none",
+            advanced : {"property" : style, "value" : `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`, overwrite : true},
+        })
     }
 
     useEffect(() => {
@@ -251,7 +180,7 @@ function ColorPickerButton({ src }: { src: string }) {
 
     return (
         <div style={{display : "flex"}} className="colorPicker">
-            <img src={src} alt="" />
+            <img src={src} alt="" onClick={() => onChange(color)} />
             <div className="colorPickerColor" style={{ backgroundColor: `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})` }} onMouseDown={onMouseDown}></div>
             {showPicker && (
                 <div style={{ zIndex: 2, position: "absolute", top: coordinates.y, left: coordinates.x }} ref={colorPicker}>
