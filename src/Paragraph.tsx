@@ -1,5 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, type CSSProperties } from "react"
-import { delay } from "./main"
+import { Fragment, useId, useLayoutEffect, useRef, type CSSProperties } from "react"
 import { position as CaretPosition } from "caret-pos"
 import Format from "./Format"
 
@@ -47,7 +46,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
         const newText = text.slice(0, caretOffset) + input + text.slice(caretOffset, text.length)
 
-        let newModel: Leaf[] = [...model]
+        const newModel: Leaf[] = [...model]
         newModel[leafIndex].text = newText
         setModel(newModel)
     }
@@ -62,6 +61,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
         if (e.ctrlKey) {
             switch (e.key) {
+                    
                 case "i":
                     style = "italic"
                     break
@@ -79,15 +79,27 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                     break
 
                 default:
+                    e.preventDefault()
                     break
             }
         }
 
+        
         let newModel: Leaf[] = model.map(leaf => ({
             ...leaf,
             styles: { ...leaf.styles }
         }));
-
+        
+        function removeEmpty() {
+            if (newModel.length > 1) {
+                newModel = newModel.filter(item => item.text !== "")
+            }
+            
+            if (newModel.length == 0) {
+                newModel.push({text : ""})
+            }
+        }
+        
         // format and style
         if (e.ctrlKey && style) {
             e.preventDefault()
@@ -96,23 +108,30 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                 setModel,
                 style
             })
-
+            
             return
         }
-        else if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) {
+        else if (e.altKey || e.shiftKey || e.metaKey) {
             return
         }
         console.log("continuing")
 
         
-        if (e.key === "Backspace" || e.key === "Delete") {
+        if (e.key === "Backspace" || e.key === "Delete" || e.key === "Enter" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
             e.preventDefault()
+        }
+
+        if (e.key === "ArrowLeft" && caretPosition.current > 0) {
+            caretPosition.current -= 1
+        }
+        if (e.key === "ArrowRight" && caretPosition.current >= 0) {
+            caretPosition.current += 1
         }
 
         // erase and delete
         console.log("Erasing / Typing")
 
-        if (startLeafIndex < leafIndex) {
+        if (startLeafIndex < leafIndex && !e.ctrlKey) {
 
             newModel[startLeafIndex].text = newModel[startLeafIndex].text.slice(0, startLeafOffset)
             newModel[leafIndex].text = newModel[leafIndex].text.slice(endLeafOffset, newModel[leafIndex].text.length)
@@ -123,10 +142,38 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         }
         else {
             if ((e.key === "Backspace" || e.key === "Delete") && startLeafOffset == endLeafOffset) {
-                newModel[leafIndex].text = newModel[leafIndex].text.slice(0, startLeafOffset - 1) + newModel[leafIndex].text.slice(startLeafOffset, newModel[leafIndex].text.length)
-                if (newModel[leafIndex].text == "" && leafIndex != 0) newModel.splice(leafIndex,1)
+                if (e.ctrlKey && newModel[startLeafIndex].text != "") {
+                    const spaceLeafOffset = newModel.slice(0,leafIndex+1).flatMap(leaf => leaf.text).join("").slice(0,caretPosition.current).split(" ").reverse().filter(item => item !== "")[0].length
+                    const spacePosition = caretPosition.current - spaceLeafOffset
+                    const spaceLeafIndex = getLeafIndexFromCaretPosition(spacePosition)
+
+                    if (spaceLeafIndex < leafIndex) {
+                        console.log(newModel[spaceLeafIndex].text.slice(0, getLeafIndexFromCaretPosition(spacePosition, true)))
+                        console.log(newModel[leafIndex].text.slice(startLeafOffset, newModel[leafIndex].text.length))
+                        newModel[spaceLeafIndex].text = newModel[spaceLeafIndex].text.slice(0, getLeafIndexFromCaretPosition(spacePosition, true))
+                        newModel[leafIndex].text = newModel[leafIndex].text.slice(startLeafOffset, newModel[leafIndex].text.length)
+                    }
+                    else {
+                        newModel[leafIndex].text = newModel[leafIndex].text.slice(0, getLeafIndexFromCaretPosition(spacePosition,true)) + newModel[leafIndex].text.slice(endLeafOffset, newModel[leafIndex].text.length)
+                    }
+                    if (leafIndex - spaceLeafIndex > 1) {
+                        newModel.splice(spaceLeafIndex + 1, leafIndex - spaceLeafIndex - 1);
+                    }
+                    caretPosition.current = spacePosition
+                }
+                else {
+                    if (newModel[leafIndex].text.slice(0, startLeafOffset) != "") {
+                        newModel[leafIndex].text = newModel[leafIndex].text.slice(0, startLeafOffset - 1) + newModel[leafIndex].text.slice(startLeafOffset, newModel[leafIndex].text.length)
+                    }
+                }
+                // if (newModel[leafIndex].text == "" && leafIndex != 0) newModel.splice(leafIndex, 1)
+                removeEmpty()
                 caretPosition.current -= 1
-                console.log(newModel)
+            }
+            else if (e.key === "Enter") {
+                newModel[leafIndex].text = [newModel[leafIndex].text.slice(0,startLeafOffset),"\n",newModel[leafIndex].text.slice(startLeafOffset)].join("")
+                removeEmpty()
+                caretPosition.current += 1
             }
             else {
                 newModel[leafIndex].text = newModel[leafIndex].text.slice(0, startLeafOffset) + newModel[leafIndex].text.slice(endLeafOffset, newModel[leafIndex].text.length)
@@ -134,8 +181,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         }
 
         setModel(newModel)
-
-        caretPosition.current -= (selectionLength + 1)
+        caretPosition.current = caretPosition.current - (selectionLength + 1) > 0 ? caretPosition.current - (selectionLength + 1) : 0
     }
 
     function keyDown(e: React.KeyboardEvent) {
@@ -149,36 +195,10 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         CaretPosition(thisTextArea.current!, caretPosition.current + 1)
     }, [model])
 
-    useEffect(() => {
-        if (!thisTextArea.current) return
-
-        let cooldown = false
-
-        const observer = new MutationObserver(async () => {
-            if (!thisTextArea.current) return
-
-            if (!cooldown) {
-                cooldown = true
-                thisTextArea.current.style.height = "auto"
-                thisTextArea.current.style.height = thisTextArea.current.scrollHeight + "px"
-                await delay(100)
-                cooldown = false
-            }
-        })
-        observer.observe(thisTextArea.current, {
-            attributes: true,
-            characterData: true,
-            childList: true,
-            subtree: true
-        })
-
-        return () => observer.disconnect()
-    }, [])
-
-    let groupedModel = []
+    const groupedModel = []
 
     function groupSimilar(style: "align_right" | "align_left" | "align_center" | "align_justify", startIndex: number) {
-        let similar = []
+        const similar = []
 
         for (let i = startIndex; i < model.length; i++) {
             const leaf = model[i];
@@ -194,48 +214,76 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         return similar
     }
 
+    let textGroup = []
     for (let i = 0; i < model.length; i++) {
         const leaf = model[i];
 
         if (leaf.styles?.align_right) {
-            const similar = groupSimilar("align_right",i)
-            groupedModel.push({"type" : "align_right", children : similar})
+            groupedModel.push({ "type": "text", children: textGroup })
+            textGroup = []
+            const similar = groupSimilar("align_right", i)
+            groupedModel.push({ "type": "align_right", children: similar })
+            i += similar.length - 1 < 0 ? 0 : similar.length - 1
+        }
+        else if (leaf.styles?.align_center) {
+            groupedModel.push({ "type": "text", children: textGroup })
+            textGroup = []
+            const similar = groupSimilar("align_center", i)
+            groupedModel.push({ "type": "align_center", children: similar })
             i += similar.length - 1 < 0 ? 0 : similar.length - 1
         }
         else {
-            groupedModel.push({"type" : "text", children : [leaf]})
+            textGroup.push(leaf)
         }
     }
+    groupedModel.push({ "type": "text", children: textGroup })
 
     console.log(groupedModel)
 
     return (
         <div id={useId()} suppressContentEditableWarning contentEditable={true} onKeyDown={keyDown} ref={thisTextArea} onBeforeInput={updateDomModel} className="textInput" onPaste={e => e.preventDefault()}>
-            {model.map((leaf, i) => {
+            {groupedModel.map((block, i) => {
+                const blockStyles : CSSProperties = {}
 
-                let styles: CSSProperties = {}
-
-                if (leaf.styles) {
-                    styles = {...leaf.styles.advanced}
-
-                    Object.entries(leaf.styles).forEach(([style, value]) => {
-                        styles.textDecorationLine ??= ""
-                        if (style == "bold" && value) styles.fontWeight = 600
-                        if (style == "italic" && value) styles.fontStyle = "italic"
-                        if (style == "underline" && value) styles.textDecorationLine += " underline"
-                        if (style == "overline" && value) styles.textDecorationLine += " overline"
-                        if (style == "strikethrough" && value) styles.textDecorationLine += " line-through"
-
-                    })
+                if (block.type == "align_right") {
+                    blockStyles.display = "flex"
+                    blockStyles.justifyContent = "end"
+                }
+                else if (block.type == "align_center") {
+                    blockStyles.display = "flex"
+                    blockStyles.justifyContent = "center"
                 }
 
                 return (
-                    <span key={i} style={styles}>
-                        {leaf.text}
-                    </span>
-                )
+                    <div key={i} style={blockStyles} >
+                        {block.children.map((leaf,index) => {
+                            let styles: CSSProperties = {}
 
+                            if (leaf.styles) {
+                                styles = { ...leaf.styles.advanced }
+
+                                Object.entries(leaf.styles).forEach(([style, value]) => {
+                                    styles.textDecorationLine ??= ""
+                                    if (style == "bold" && value) styles.fontWeight = 600
+                                    if (style == "italic" && value) styles.fontStyle = "italic"
+                                    if (style == "underline" && value) styles.textDecorationLine += " underline"
+                                    if (style == "overline" && value) styles.textDecorationLine += " overline"
+                                    if (style == "strikethrough" && value) styles.textDecorationLine += " line-through"
+                                })
+                            }
+
+                            // console.log(index == block.children.length - 1 ? "\n" : null)
+
+                            return (
+                                <span key={i + "-" + index} style={styles}>
+                                    {leaf.text}
+                                    {/* {leaf.text + (index == block.children.length - 1 ? "\n" : "")} */}
+                                </span>
+                            )
+                        })}
+                    </div>
+                )
             })}
-        </div >
+        </div>
     )
 }

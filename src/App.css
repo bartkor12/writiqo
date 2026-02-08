@@ -152,7 +152,7 @@ body {
 }
 
 .textInput {
-  height: auto;
+  height: var(--page-height);
   width: var(--page-width);
   margin-top: 120px;
   padding: 20px;

@@ -21,7 +21,9 @@ declare global {
             align_left? : boolean,
             align_right? : boolean,
             align_center?: boolean,
-            align_justify? : boolean
+            align_justify? : boolean,
+            strikethrough? :boolean,
+            list? :boolean
         }
     };
     interface FormatTypes {
@@ -29,6 +31,7 @@ declare global {
         setModel: React.Dispatch<React.SetStateAction<Leaf[]>>,
         style: "italic" | "underline" | "bold" | "none" | "strikethrough" | "overline" 
         | "list" | "align_left" | "align_center" | "align_right" | "align_justify",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         advanced?: { property: keyof CSSProperties, value: any, overwrite : boolean } | undefined,
     }
 }

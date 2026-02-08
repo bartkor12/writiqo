@@ -94,12 +94,12 @@ export default function TextInput({model, setModel} : EditorComponentProps) {
     })
 
     document.onpaste = event => {
-        var items = event.clipboardData?.items;
+        const items = event.clipboardData?.items;
         for (const index in items) {
-            var item = items[Number(index)];
+            const item = items[Number(index)];
             if (item?.kind === 'file') {
-                var blob = item.getAsFile();
-                var reader = new FileReader();
+                const blob = item.getAsFile();
+                const reader = new FileReader();
                 reader.onload = function (event) {
                     console.log("paste")
                     setContent(prev => [...prev, { id: uuid4(), type: "Image", src: event.target?.result as string }])

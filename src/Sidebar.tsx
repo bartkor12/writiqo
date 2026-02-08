@@ -7,7 +7,7 @@ const tools = [
   "brush"
 ]
 
-export default function App(props : any) {
+export default function App() {
   const mousedown = useRef(false)
   const sidebar = useRef<HTMLDivElement>(null!)
   const [sliderX, setSliderX] = useState(0)
@@ -16,7 +16,7 @@ export default function App(props : any) {
   const mouseLeaveFiring = useRef(false)
   const [activeTools, setActiveTools] = useState<Array<boolean>>(() => tools.map((_, index) => index === 0))
 
-  function moveSlider(e: any) {
+  function moveSlider(e: React.MouseEvent<HTMLDivElement>) {
     if (mousedown.current == true) {
 
       const length = sidebar.current.getBoundingClientRect().width

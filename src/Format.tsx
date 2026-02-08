@@ -1,4 +1,5 @@
 import { position as CaretPosition } from "caret-pos"
+import type { CSSProperties } from "react"
 
 let savedSelection: { length: number, end: number, id : string } = { length: 0, end: 0, id : "" }
 
@@ -37,7 +38,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
 
     restoreSelection()
 
-    let caretPosition = CaretPosition(editableContentDiv).pos
+    const caretPosition = CaretPosition(editableContentDiv).pos
     const editableContentDivId = editableContentDiv.id
 
     function getLeafIndexFromCaretPosition(caretPosition: number, getOffset: boolean = false) {
@@ -107,7 +108,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         
         if (leaf.styles && leaf.styles.advanced) {
             if (advanced) {
-                const styles = { ...leaf.styles.advanced }
+                const styles : CSSProperties = { ...leaf.styles.advanced }
                 
                 if (styles[advanced.property] && !advanced.overwrite) {
                     delete styles[advanced.property]
@@ -156,7 +157,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
                 newModel[index]!.styles!.advanced! = advancedStyles(index)
             }
             else {
-                newModel[index]!.styles![style] = !newModel[index]!.styles![style];
+                newModel[index].styles![style] = !newModel[index].styles![style];
             }
         }
 

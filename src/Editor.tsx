@@ -15,7 +15,8 @@ export default function Editor() {
     return (
         <>
             <Ribbon model={model} setModel={setModel} />
-            <Sidebar model={model} setModel={setModel} />
+            {/* <Sidebar model={model} setModel={setModel} /> */}
+            <Sidebar/>
             <TextInput model={model} setModel={setModel} />
         </>
     )

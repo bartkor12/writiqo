@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import Editor from './Editor'
 
-export var globalData = {
+export const globalData = {
   activeTool: "type"
 }
 
