@@ -1,4 +1,4 @@
-import { Fragment, useId, useLayoutEffect, useRef, type CSSProperties } from "react"
+import { useId, useLayoutEffect, useRef, type CSSProperties } from "react"
 import { position as CaretPosition } from "caret-pos"
 import Format from "./Format"
 
@@ -84,7 +84,6 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             }
         }
 
-        
         let newModel: Leaf[] = model.map(leaf => ({
             ...leaf,
             styles: { ...leaf.styles }
@@ -129,7 +128,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         }
 
         // erase and delete
-        console.log("Erasing / Typing")
+        console.log("input")
 
         if (startLeafIndex < leafIndex && !e.ctrlKey) {
 
@@ -169,6 +168,9 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                 // if (newModel[leafIndex].text == "" && leafIndex != 0) newModel.splice(leafIndex, 1)
                 removeEmpty()
                 caretPosition.current -= 1
+            }
+            else if (e.key === "a" && e.ctrlKey) {
+                console.log("all")
             }
             else if (e.key === "Enter") {
                 newModel[leafIndex].text = [newModel[leafIndex].text.slice(0,startLeafOffset),"\n",newModel[leafIndex].text.slice(startLeafOffset)].join("")
