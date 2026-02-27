@@ -44,10 +44,10 @@ export default function Ribbon({model,setModel} : RibbonTypes) {
                 <div style={{display: "flex", gap: 18}}>
                     <FormatSlider model={model} setModel={setModel} style="fontSize" type="vertical" unit="px" min={0} max={150} sensitivity={1} />
                     <div className="formatContainer formatButtonContainer">
-                        <FormatButton model={model} setModel={setModel} style="align_left" />
-                        <FormatButton model={model} setModel={setModel} style="align_right" />
-                        <FormatButton model={model} setModel={setModel} style="align_justify" />
-                        <FormatButton model={model} setModel={setModel} style="align_center" />
+                        <FormatButton model={model} setModel={setModel} style="none" advanced={{property : "textAlign", value: "left", overwrite : true}} />
+                        <FormatButton model={model} setModel={setModel} style="none" advanced={{property : "textAlign", value: "right", overwrite : true}} />
+                        <FormatButton model={model} setModel={setModel} style="none" advanced={{property : "textAlign", value: "justify", overwrite : true}} />
+                        <FormatButton model={model} setModel={setModel} style="none" advanced={{property : "textAlign", value: "center", overwrite : true}}/>
                     </div>
                 </div>
             </div>
@@ -191,19 +191,21 @@ function ColorPickerButton({ src, model, setModel, style }: {
     )
 }
 
-function FormatButton({model,setModel,style} : FormatTypes) {
+function FormatButton({model,setModel,style,advanced} : FormatTypes) {
+    const name = style == "none" ? "align_" + advanced!.value : style
 
     function onClick() {
         Format({
             model,
             setModel,
-            style
+            style,
+            advanced
         })
     }
 
     return (
-        <button className="formatButton" onClick={onClick} >
-            <img src={`format_${style}.svg`} alt="" />
+        <button className="formatButton" onClick={onClick} id={name} >
+            <img src={`format_${name}.svg`} alt="" />
         </button>
     )
 }

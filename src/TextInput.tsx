@@ -14,7 +14,7 @@ export default function TextInput({model, setModel} : EditorComponentProps) {
     const canvas = useRef<HTMLCanvasElement>(null)
     const context = useRef<CanvasRenderingContext2D>(null)
     const [content, setContent] = useState<Array<Block>>([{ id: uuid4(), type: "Paragraph" }])
-    let strokes: Array<Array<{ x: number, y: number }>> = [];
+    const strokes: Array<Array<{ x: number, y: number }>> = [];
     let drawing = false
 
     useEffect(() => {
@@ -34,14 +34,13 @@ export default function TextInput({model, setModel} : EditorComponentProps) {
         thisDivTextArea.current?.parentElement?.style.setProperty("user-select", globalData.activeTool != "type" ? "none" : "text")
         thisDivTextArea.current?.style.setProperty("z-index", globalData.activeTool != "type" ? "0" : "2")
         canvas.current?.style.setProperty("z-index", globalData.activeTool != "type" ? "2" : "0")
-
     }, 100);
 
     function canvasMousedown(e: React.MouseEvent) {
-        if (!context.current) return
+        if (!context.current || !canvas.current) return
         if (e.button != 0) return
         context.current.beginPath()
-        context.current.moveTo(e.clientX - canvas.current?.offsetLeft!, e.clientY - canvas.current?.offsetTop!)
+        context.current.moveTo(e.clientX - canvas.current?.offsetLeft, e.clientY - canvas.current?.offsetTop)
         drawing = true
         strokes.push([])
         strokes[strokes.length - 1].push({ x: e.clientX, y: e.clientY })
@@ -57,8 +56,8 @@ export default function TextInput({model, setModel} : EditorComponentProps) {
     }
 
     function canvasMousemove(e: React.MouseEvent) {
-        if (!context.current || drawing == false) return
-        context.current.lineTo(e.clientX - canvas.current?.offsetLeft!, e.clientY - canvas.current?.offsetTop!)
+        if (!context.current || drawing == false || !canvas.current) return
+        context.current.lineTo(e.clientX - canvas.current?.offsetLeft, e.clientY - canvas.current?.offsetTop)
         context.current.stroke()
         strokes[strokes.length - 1].push({ x: e.clientX, y: e.clientY })
     }
@@ -112,15 +111,16 @@ export default function TextInput({model, setModel} : EditorComponentProps) {
     return (
         <div id="textInputDiv">
             <canvas id="drawing" ref={canvas} onMouseDown={canvasMousedown} onMouseMove={canvasMousemove} onMouseUp={canvasMouseup} />
-            <div className="textInputWrapper" ref={thisDivTextArea}></div>
-            {content.map(block => {
-                switch (block.type) {
-                    case "Paragraph":
-                        return <Paragraph model={model} setModel={setModel} key={block.id} />
-                    case "Image":
-                        return <Image key={block.id} id={block.id} src={block.src} content={content} setContent={setContent} />
-                }
-            })}
+            <div className="textInputWrapper" ref={thisDivTextArea}>
+                {content.map(block => {
+                    switch (block.type) {
+                        case "Paragraph":
+                            return <Paragraph model={model} setModel={setModel} key={block.id} />
+                        case "Image":
+                            return <Image key={block.id} id={block.id} src={block.src} content={content} setContent={setContent} />
+                    }
+                })}
+            </div>
         </div>
     )
 }

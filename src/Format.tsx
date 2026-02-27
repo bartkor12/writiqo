@@ -65,26 +65,27 @@ export default function Format({ model, setModel, style, advanced = undefined }:
     function createRangeFromPositions(start: number, end: number) {
         const range = document.createRange()
 
-        if (editableContentDiv!.children[getLeafIndexFromCaretPosition(start)].firstChild) {
-            range.setStart(
-                editableContentDiv!.children[getLeafIndexFromCaretPosition(start)].firstChild!,
-                getLeafIndexFromCaretPosition(start, true)
-            )
-            range.setEnd(
-                editableContentDiv!.children[getLeafIndexFromCaretPosition(end)].firstChild!,
-                getLeafIndexFromCaretPosition(end, true)
-            )
+        if (!editableContentDiv) {
+            console.warn("errored on createRangeFromPositions : editableContentDiv")
+            return range
         }
-        else {
-            console.warn(
-                model,
-                editableContentDiv!.children,
-                editableContentDiv!.children[getLeafIndexFromCaretPosition(start)].firstChild!,
-                getLeafIndexFromCaretPosition(start),
-                getLeafIndexFromCaretPosition(start, true),
-                start
-            )
+        const flatDomRepresentation = Array.from(editableContentDiv.querySelectorAll("*")).filter(item => item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE)
+        const startNode = flatDomRepresentation[getLeafIndexFromCaretPosition(start)].firstChild
+        const endNode = flatDomRepresentation[getLeafIndexFromCaretPosition(end)].firstChild
+        
+        if (!startNode || !endNode) {
+            console.warn("errored on createRangeFromPositions: startElement || endElement")
+            return range
         }
+
+        range.setStart(
+            startNode,
+            getLeafIndexFromCaretPosition(start, true)
+        )
+        range.setEnd(
+            endNode,
+            getLeafIndexFromCaretPosition(end, true)
+        )
 
         return range
     }
@@ -140,7 +141,6 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         }
     }));
 
-
     // format and style
 
     // console.log("Formatting Manually")
@@ -157,6 +157,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
                 newModel[index]!.styles!.advanced! = advancedStyles(index)
             }
             else {
+                
                 newModel[index].styles![style] = !newModel[index].styles![style];
             }
         }
