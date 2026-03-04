@@ -26,6 +26,13 @@
   z-index: 99;
 }
 
+.page {
+  height: var(--page-height);
+  border-bottom: #141414;
+  border-radius: 2px;
+  border-style: dashed;
+}
+
 .overlaySvg {
   display: flex;
   justify-content: center;
@@ -171,6 +178,10 @@ body {
   overflow-y: scroll;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+@media print {
+
 }
 
 #ribbon {

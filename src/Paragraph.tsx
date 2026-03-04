@@ -290,12 +290,42 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
     }
     groupedModel.push({ "type": "text", children: textGroup })
 
+    function paginate() {
+        if (!thisTextArea.current) return
+
+        const flatDomRepresentation = Array.from(thisTextArea.current.querySelectorAll("*")).filter(item => item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE && item.textContent == '\n\u2028')
+
+        let totalHeight = 0
+        const pages = []
+
+        for (let i = 0; i < flatDomRepresentation.length; i++) {
+            const span = flatDomRepresentation[i];
+            const spanHeight = span.getBoundingClientRect().height
+
+            if (totalHeight + spanHeight > 1122) {
+                pages.push(i)
+                totalHeight = 0
+            }
+            
+            totalHeight += spanHeight
+            console.log(spanHeight,totalHeight)
+        }
+
+        if (pages[0]) {
+            console.log(groupedModel[0].children[pages[0]])
+        }
+
+        return pages
+    }
+
+    console.log("pages",paginate())
+
     console.log(groupedModel)
 
     return (
         <div id={useId()} suppressContentEditableWarning contentEditable={true} onKeyDown={keyDown} ref={thisTextArea} onBeforeInput={updateDomModel} className="textInput" onPaste={e => e.preventDefault()}>
             {groupedModel.map((block, i) => {
-                const blockStyles : CSSProperties = {}
+                const blockStyles: CSSProperties = {}
 
                 if (block.type == "align_right") {
                     // blockStyles.display = "flex"
@@ -310,7 +340,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
                 return (
                     <div key={i} style={blockStyles} >
-                        {block.children.map((leaf,index) => {
+                        {block.children.map((leaf, index) => {
                             let styles: CSSProperties = {}
 
                             if (leaf.styles) {
@@ -337,4 +367,4 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             })}
         </div>
     )
-}
+}   
