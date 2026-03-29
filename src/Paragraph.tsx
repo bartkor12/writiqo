@@ -120,7 +120,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         else if (e.altKey || e.shiftKey || e.metaKey) {
             return
         }
-        
+
         console.log("continuing")
         
         if (e.key === "Backspace" || e.key === "Delete" || e.key === "Enter" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
@@ -247,9 +247,71 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         console.log(caretPosition.current)
     }, [model])
 
+    // function paginate() {
+    //     if (!thisTextArea.current) return
+
+    //     const flatDomRepresentation = Array.from(thisTextArea.current.querySelectorAll("*")).filter(item => item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE)
+        
+    //     let totalHeight = 0
+    //     let prevSpanY = 0
+    //     let prevLeaf : Leaf | undefined
+    //     let similar : Leaf[] = []
+    //     let nextPage = 0
+
+    //     const pagedModel : Array<Array<{type : string, children : Leaf[]}>> = []
+
+    //     for (let i = 0; i < flatDomRepresentation.length; i++) {
+    //         const span = flatDomRepresentation[i];
+    //         const spanRect = span.getBoundingClientRect()
+    //         const spanHeight = spanRect.height
+    //         const spanY = spanRect.y
+    //         const leaf = model[i]
+    //         const page = Math.floor((totalHeight + spanHeight) / 1122)
+
+    //         if (leaf) {
+    //             leaf.styles ??= {}
+    //             leaf.styles.advanced ??= { textAlign: "left" }
+    //         }
+
+    //         if (prevSpanY != spanY) {
+    //             totalHeight += spanHeight
+    //             prevSpanY = spanY
+    //         }
+
+    //         if (nextPage == page && leaf && prevLeaf) {
+    //             pagedModel[page - 1] ??= []
+    //             pagedModel[page - 1].push({type : "text", children : similar})
+    //             similar = []
+    //         }
+            
+    //         if (prevLeaf && leaf && prevLeaf.styles?.advanced?.textAlign == leaf.styles?.advanced?.textAlign) {
+    //             if (!similar.includes(prevLeaf)) similar.push(prevLeaf)
+    //             console.log(leaf)
+    //             similar.push(leaf)
+    //         }
+    //         if ((leaf && prevLeaf && prevLeaf?.styles?.advanced?.textAlign != leaf.styles?.advanced?.textAlign) || i == flatDomRepresentation.length - 1) {
+    //             console.log("hi")
+    //             const textAlign = leaf.styles?.advanced?.textAlign == null ? "text" : "align_" + leaf.styles?.advanced?.textAlign
+    //             pagedModel[page] ??= []
+    //             pagedModel[page].push({ type: textAlign, children: similar })
+    //             similar = []
+    //         }
+
+    //         nextPage = page + 1
+    //         prevLeaf = leaf
+    //     }    
+
+    //     return pagedModel
+    // }
+
+    // let paginatedModel = paginate()
     const groupedModel = []
+    let textGroup : Leaf[] = []
 
     function groupSimilar(style: "right" | "left" | "center" | "justify", startIndex: number) {
+        groupedModel.push({ "type": "text", children: textGroup })
+        textGroup = []
+
         const similar = []
 
         for (let i = startIndex; i < model.length; i++) {
@@ -263,25 +325,20 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             }
         }
 
+        groupedModel.push({ "type": "align_" + style, children: similar })
+
         return similar
     }
 
-    let textGroup = []
     for (let i = 0; i < model.length; i++) {
         const leaf = model[i];
 
         if (leaf.styles?.advanced?.textAlign == "right") {
-            groupedModel.push({ "type": "text", children: textGroup })
-            textGroup = []
             const similar = groupSimilar("right", i)
-            groupedModel.push({ "type": "align_right", children: similar })
             i += similar.length - 1 < 0 ? 0 : similar.length - 1
         }
         else if (leaf.styles?.advanced?.textAlign == "center") {
-            groupedModel.push({ "type": "text", children: textGroup })
-            textGroup = []
             const similar = groupSimilar("center", i)
-            groupedModel.push({ "type": "align_center", children: similar })
             i += similar.length - 1 < 0 ? 0 : similar.length - 1
         }
         else {
@@ -290,41 +347,13 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
     }
     groupedModel.push({ "type": "text", children: textGroup })
 
-    function paginate() {
-        if (!thisTextArea.current) return
+    console.log("grouped:",groupedModel)
 
-        const flatDomRepresentation = Array.from(thisTextArea.current.querySelectorAll("*")).filter(item => item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE && item.textContent == '\n\u2028')
-
-        let totalHeight = 0
-        const pages = []
-
-        for (let i = 0; i < flatDomRepresentation.length; i++) {
-            const span = flatDomRepresentation[i];
-            const spanHeight = span.getBoundingClientRect().height
-
-            if (totalHeight + spanHeight > 1122) {
-                pages.push(i)
-                totalHeight = 0
-            }
-            
-            totalHeight += spanHeight
-            console.log(spanHeight,totalHeight)
-        }
-
-        if (pages[0]) {
-            console.log(groupedModel[0].children[pages[0]])
-        }
-
-        return pages
-    }
-
-    console.log("pages",paginate())
-
-    console.log(groupedModel)
+    // paginatedModel ??= [groupedModel]
 
     return (
         <div id={useId()} suppressContentEditableWarning contentEditable={true} onKeyDown={keyDown} ref={thisTextArea} onBeforeInput={updateDomModel} className="textInput" onPaste={e => e.preventDefault()}>
-            {groupedModel.map((block, i) => {
+        {groupedModel.map((block, i) => {
                 const blockStyles: CSSProperties = {}
 
                 if (block.type == "align_right") {
@@ -365,6 +394,8 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                     </div>
                 )
             })}
+
+
         </div>
     )
 }   

@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, type CSSProperties } from "react"
+import { useState, useRef, useEffect, type CSSProperties, type ReactNode } from "react"
 import createFuzzySearch from '@nozbe/microfuzz'
 import { v4 as uuid4 } from "uuid"
 import Format from "./Format";
 import { RgbaColorPicker, type RgbaColor } from "react-colorful";
+import Swal from "sweetalert2"
 
 function pressFlash(el: HTMLElement) {
     el.classList.remove("press-flash")
@@ -15,8 +16,116 @@ interface RibbonTypes {
     setModel: React.Dispatch<React.SetStateAction<Leaf[]>>
 }
 
-export default function Ribbon({model,setModel} : RibbonTypes) {
+function Dropdown({children, id} : {children : ReactNode, id : string}) {
+    let dropdownClicked = false
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
+    function dropdownClick() {
+        if (!dropdownRef.current) return
+
+        dropdownRef.current.style.display = dropdownClicked ? "flex" : "none"
+        dropdownClicked = !dropdownClicked
+    }
+
     return (
+        <div id={id}>
+            <button className="menubarButton" onClick={dropdownClick}>
+                <span>File</span>
+            </button>
+            <div className="dropdownContent" ref={dropdownRef}>
+                {children}
+            </div>
+        </div>
+    )
+}
+
+function Print() {
+    return (
+        <button onClick={() => window.print()}>Print</button>
+    )
+}
+
+function Export({model} : {model : Leaf[]}) {
+
+    function exportModel() {
+
+        Swal.fire({
+            title: "File name",
+            input: "text",
+            showCancelButton : true,
+            confirmButtonText : "Enter",
+            showLoaderOnConfirm : true,
+            preConfirm : async (fileName) => {
+                const blob = new Blob([JSON.stringify(model)], { type: "application/json" })
+                const href = URL.createObjectURL(blob)
+                const link = document.createElement("a")
+                link.href = href
+
+                link.download = fileName + ".writiqo"
+
+                document.body.appendChild(link)
+                link.click()
+
+                document.body.removeChild(link)
+                URL.revokeObjectURL(href)
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed) Swal.fire({
+                title: "Saved",
+                icon: "success",
+                iconColor: "#a5b4fc"
+            })
+        })
+    }   
+
+    return (
+        <button onClick={exportModel}>Export</button>
+    )
+}
+
+function Import({setModel} : {setModel : React.Dispatch<React.SetStateAction<Leaf[]>>}) {
+
+    function importModel() {
+        const fileInput : HTMLInputElement = document.createElement("input")
+        fileInput.type = "file"
+
+        fileInput.onchange = () => {
+            if (!fileInput.files) return
+            const file = fileInput.files[0]
+
+            if (!(file.name.split(".")[1] == "writiqo")) return
+            const fileReader = new FileReader()
+            fileReader.readAsText(file)
+
+            fileReader.onload = readerEvent => {
+                if (!readerEvent.target) return
+                const content = readerEvent.target.result?.toString()
+
+                if (!content) return
+
+                const importedModel = JSON.parse(content)
+                setModel(importedModel)
+            }
+        }
+
+        fileInput.click()
+    }
+
+    return (
+        <button onClick={importModel}>Import</button>
+    )
+}
+
+export default function Ribbon({model,setModel} : RibbonTypes) {
+    return (<>
+        <div id="menubar">
+            <Dropdown id="fileDropdown">
+                <Print/>
+                <Export model={model}/>
+                <Import setModel={setModel}/>
+            </Dropdown>
+        </div>
         <div id="ribbon">
             <div style={{display : "flex", flexDirection : "column", gap : 5}}>
                 <span className="descriptor">Text Modifications</span>
@@ -52,6 +161,7 @@ export default function Ribbon({model,setModel} : RibbonTypes) {
                 </div>
             </div>
         </div>
+        </>
     )
 }
 
@@ -108,25 +218,25 @@ function FontDropdownContainer({ model, setModel }: {
         setFontsToDisplay([])
     }
 
-    function fontDropdownClick(e: React.MouseEvent<HTMLDivElement>) {
-        if (e.ctrlKey === true && e.button === 0) {
+    function fontDropdownClick(e: React.MouseEvent<HTMLButtonElement>) {
+        Format({
+            model,
+            setModel,
+            style: "none",
+            advanced: { property: "fontFamily", value: chosenFontText.current, overwrite: true }
+        })
 
-            Format({
-                model,
-                setModel,
-                style: "none",
-                advanced: { property: "fontFamily", value: chosenFontText.current, overwrite: true }
-            })
-
-            pressFlash(e.currentTarget)
-        }
+        pressFlash(e.currentTarget)
     }
 
     return (
-        <div className="fontDropdownContainer formatContainer" onClick={fontDropdownClick}>
+        <div className="fontDropdownContainer formatContainer">
             <div className="overlaySvg">
                 <input type="text" onInput={fontDropdownInput} onKeyDown={fontDropdownKeydown} ref={fontInputRef} />
-                <img src="arrow_down.svg" alt="" />
+                {/* <img src="arrow_down.svg" alt="" /> */}
+                <button className="formatButton" onClick={fontDropdownClick}>
+                    <img src="checkmark.svg" alt="" />
+                </button>
             </div>
             <div className="fontDropdown">
                 {fontsToDisplay?.map(item => {
