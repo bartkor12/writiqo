@@ -19,7 +19,8 @@ declare global {
             underline? : boolean,
             overline? : boolean,
             strikethrough? :boolean,
-            list? :boolean
+            list? :boolean,
+            image? : string
         }
     };
     interface FormatTypes {

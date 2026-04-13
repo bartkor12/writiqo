@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, type CSSProperties } from "react"
+import React, { useId, useLayoutEffect, useRef, type CSSProperties } from "react"
 import { position as CaretPosition } from "caret-pos"
 import Format from "./Format"
 
@@ -9,8 +9,12 @@ interface EditorComponentProps {
 
 export default function Paragraph({ model, setModel }: EditorComponentProps) {
     const thisTextArea = useRef<HTMLDivElement>(null)
-
     const caretPosition = useRef<number>(0)
+    const undoModel = useRef<Array<Leaf[]>>([])
+    const lastTyped = useRef<number>(0)
+    const undoIndex = useRef<number>(0)
+    const undoCaretPositions = useRef<number[]>([])
+    const maxUndo = 20
 
     function getLeafIndexFromCaretPosition(caretPosition: number, getOffset: boolean = false) {
 
@@ -46,9 +50,16 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
         const newText = text.slice(0, caretOffset) + input + text.slice(caretOffset, text.length)
 
-        const newModel: Leaf[] = [...model]
+        const newModel: Leaf[] = makeNewModel()
         newModel[leafIndex].text = newText
         setModel(newModel)
+    }
+
+    function makeNewModel() {
+        return model.map(leaf => ({
+            ...leaf,
+            styles: { ...leaf.styles }
+        }))
     }
 
     function formatSelection(e: React.KeyboardEvent) {
@@ -77,6 +88,12 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                 case "o":
                     style = "overline"
                     break
+                
+                case "v":
+                    break
+
+                case "a":
+                    break
 
                 default:
                     e.preventDefault()
@@ -84,10 +101,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             }
         }
 
-        let newModel: Leaf[] = model.map(leaf => ({
-            ...leaf,
-            styles: { ...leaf.styles }
-        }));
+        let newModel: Leaf[] = makeNewModel()
         
         function removeEmpty() {
 
@@ -117,7 +131,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             
             return
         }
-        else if (e.altKey || e.shiftKey || e.metaKey) {
+        else if (e.altKey || (e.shiftKey && e.key === "Shift") || e.metaKey || (e.ctrlKey && e.key === "Control")) {
             return
         }
 
@@ -137,31 +151,35 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         // erase and delete
         console.log("input")
 
-        function activateTextAlign(style: string) {
-            newModel[leafIndex].styles ??= {}
-            newModel[leafIndex].styles.advanced ??= {}
-            if (newModel[leafIndex].styles.advanced.textAlign == undefined) newModel[leafIndex].styles.advanced.textAlign = "left"
+        // function activateTextAlign(style: string) {
+        //     newModel[leafIndex].styles ??= {}
+        //     newModel[leafIndex].styles.advanced ??= {}
+        //     if (newModel[leafIndex].styles.advanced.textAlign == undefined) newModel[leafIndex].styles.advanced.textAlign = "left"
             
-            if (newModel[leafIndex].styles.advanced.textAlign == style) {
-                document.getElementById("align_center")!.classList.remove("activated")
-                document.getElementById("align_right")!.classList.remove("activated")
-                document.getElementById("align_left")!.classList.remove("activated")
-                document.getElementById("align_justify")!.classList.remove("activated")
+        //     if (newModel[leafIndex].styles.advanced.textAlign == style) {
+        //         document.getElementById("align_center")!.classList.remove("activated")
+        //         document.getElementById("align_right")!.classList.remove("activated")
+        //         document.getElementById("align_left")!.classList.remove("activated")
+        //         document.getElementById("align_justify")!.classList.remove("activated")
 
-                document.getElementById("align_" + style)!.classList.add("activated")
-            }
-        }
+        //         document.getElementById("align_" + style)!.classList.add("activated")
+        //     }
+        // }
         
-        activateTextAlign("center")
-        activateTextAlign("left")
-        activateTextAlign("right")
-        activateTextAlign("justify")
+        // activateTextAlign("center")
+        // activateTextAlign("left")
+        // activateTextAlign("right")
+        // activateTextAlign("justify")
 
         console.log(newModel)
 
+        if (e.ctrlKey && e.key === "c") {
+            document.execCommand("copy")
+        }
+
         const leafIndexText = newModel[leafIndex].text
 
-        if (startLeafIndex < leafIndex && !e.ctrlKey) {
+        if (startLeafIndex < leafIndex && (!e.ctrlKey || (e.ctrlKey && e.key === "v"))) {
 
             newModel[startLeafIndex].text = newModel[startLeafIndex].text.slice(0, startLeafOffset)
             newModel[leafIndex].text = leafIndexText.slice(endLeafOffset, leafIndexText.length)
@@ -169,6 +187,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             if (leafIndex - startLeafIndex > 1) {
                 newModel.splice(startLeafIndex + 1, leafIndex - startLeafIndex - 1);
             }
+
         }
         else {
             if ((e.key === "Backspace" || e.key === "Delete") && startLeafOffset == endLeafOffset) {
@@ -210,8 +229,19 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                 removeEmpty()
                 caretPosition.current -= 1
             }
-            else if (e.key === "a" && e.ctrlKey) {
-                console.log("all")
+            else if (e.ctrlKey && e.key.toLowerCase() === "z") {
+                updateUndoModel(newModel)
+
+                if (e.shiftKey) {
+                    console.log("redo",undoModel)
+                    undoIndex.current = Math.max(undoIndex.current - 1, 0)
+                }
+                else {
+                    console.log("undo", undoModel)
+                    undoIndex.current = Math.min(undoIndex.current + 1, undoModel.current.length)
+                }
+                caretPosition.current = undoCaretPositions.current[undoModel.current.length - undoIndex.current] ?? caretPosition.current
+                newModel = undoModel.current[undoModel.current.length - undoIndex.current] ?? newModel;
             }
             else if (e.key === "Enter") {
                 const styles = newModel[leafIndex].styles
@@ -242,9 +272,34 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         formatSelection(e)
     }
 
+    function updateUndoModel(newModel: Leaf[]) {
+        if (undoIndex.current == 0) {
+            if (JSON.stringify(undoModel.current.at(-1)) != JSON.stringify(newModel)) {
+                undoModel.current.push(makeNewModel())
+                undoCaretPositions.current.push(caretPosition.current)
+            }
+            if (undoModel.current.length > maxUndo) undoModel.current.shift()
+        }
+        return undoIndex.current == 0
+    } 
+
     useLayoutEffect(() => {
         CaretPosition(thisTextArea.current!, caretPosition.current + 1)
-        console.log(caretPosition.current)
+        console.log(caretPosition.current,undoModel)
+
+        if (Date.now() - lastTyped.current > 300) {
+            if (!updateUndoModel(model)) {
+                if (model != undoModel.current.at(-(undoIndex.current))) {
+                    console.log(undoModel, undoIndex)
+                    console.log("resetting")
+                    undoModel.current = undoModel.current.slice(0, undoModel.current.length - undoIndex.current)
+                    undoCaretPositions.current = undoCaretPositions.current.slice(0, undoCaretPositions.current.length - undoIndex.current)
+                    undoIndex.current = 0
+                }
+            }
+        }
+        lastTyped.current = Date.now()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [model])
 
     // function paginate() {
@@ -305,6 +360,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
     // }
 
     // let paginatedModel = paginate()
+
     const groupedModel = []
     let textGroup : Leaf[] = []
 
@@ -349,21 +405,136 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
     console.log("grouped:",groupedModel)
 
-    // paginatedModel ??= [groupedModel]
+    function paste(e: React.ClipboardEvent) {
+        const clipboardText = e.clipboardData.getData("text")
+        const newModel: Leaf[] = makeNewModel()
+        const nextLeafIndex = getLeafIndexFromCaretPosition(caretPosition.current + 1)
+        const newModelLeaf = newModel[nextLeafIndex]
 
+        for (const item of e.clipboardData.items) {
+            if (item.type.startsWith("image/")) {
+                const file = item.getAsFile()
+                if (!file) continue
+                
+                const reader = new FileReader()
+
+                reader.onload = () => {
+                    const imageb64 = reader.result as string
+                    const cachedText = newModelLeaf.text
+
+                    newModelLeaf.text = cachedText.slice(0, getLeafIndexFromCaretPosition(caretPosition.current + 1, true))
+
+                    newModel.splice(nextLeafIndex + 1, 0, {
+                        text: "",
+                        styles: {
+                            image: imageb64,
+                            advanced: { textAlign: "left" }
+                        }
+                    })
+
+                    newModel.splice(nextLeafIndex + 2, 0, {
+                        text: "\u2028" + cachedText.slice(getLeafIndexFromCaretPosition(caretPosition.current + 1, true), cachedText.length),
+                        styles: newModelLeaf.styles
+                    })
+
+
+                    setModel(newModel)
+                }
+
+                reader.readAsDataURL(file)
+            }
+        }
+
+        if (clipboardText) {
+
+            newModelLeaf.text =
+                newModelLeaf.text.slice(0, getLeafIndexFromCaretPosition(caretPosition.current + 1, true)) +
+                clipboardText +
+                newModelLeaf.text.slice(getLeafIndexFromCaretPosition(caretPosition.current + 1, true), newModel[getLeafIndexFromCaretPosition(caretPosition.current)].text.length)
+            // getLeafIndexFromCaretPosition(caretPosition.current)
+            // getLeafIndexFromCaretPosition(caretPosition.current, true)
+
+            caretPosition.current += clipboardText.length
+            setModel(newModel)
+        }
+    }
+
+    function Image({src, id} : {src : string, id : string}) {
+        
+        function onDragStart(e : React.DragEvent<HTMLImageElement>) {
+            e.dataTransfer.effectAllowed = "move"
+            e.dataTransfer.setData("text/plain","")
+            e.dataTransfer.setData("text/uri-list","")
+
+            const blankImage = document.createElement("img");
+            blankImage.src =
+                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+            e.dataTransfer.setDragImage(blankImage, 0, 0);
+        }
+
+        return (
+            <img src={src} onDragStart={onDragStart} onDrop={e => e.preventDefault()} id={id}/>
+        )
+    }
+
+    function onDrop(e : React.DragEvent) {
+        e.preventDefault() 
+        e.stopPropagation()
+        if (!window.getSelection()?.isCollapsed) return
+        if (!thisTextArea.current) return
+        const img = new DOMParser().parseFromString(e.dataTransfer.getData("text/html"),"text/html").querySelector("img")
+        if (!img) return
+
+        const offset = document.caretPositionFromPoint(e.clientX,e.clientY)
+        const offsetNode = offset?.offsetNode.parentElement
+        const flatDomRepresentation = Array.from(thisTextArea.current.querySelectorAll("*")).filter(item => (item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE) || item instanceof HTMLImageElement )
+        if (!offsetNode) return
+        
+        const leafOffset = offset.offset
+        const leafIndex = flatDomRepresentation.indexOf(offsetNode)
+
+        if (leafIndex < 0) return
+
+        const newModel: Leaf[] = makeNewModel()
+        const newModelLeaf = newModel[leafIndex]
+        const cachedText = newModelLeaf.text
+
+        console.log(newModel,flatDomRepresentation)
+        newModel.splice(flatDomRepresentation.map(el => el.id).indexOf(img.id),1)
+
+        newModelLeaf.text = cachedText.slice(0, leafOffset)
+        
+        newModel.splice(leafIndex + 1, 0, {
+            text: "",
+            styles: {
+                image: img.src,
+                advanced: { textAlign: "left" }
+            }
+        })
+        
+        newModel.splice(leafIndex + 2, 0, {
+            text: "\u2028" + cachedText.slice(leafOffset, cachedText.length),
+            styles: newModelLeaf.styles
+        })
+
+
+        setModel(newModel)
+    }
+
+    // paginatedModel ??= [groupedModel]
     return (
-        <div id={useId()} suppressContentEditableWarning contentEditable={true} onKeyDown={keyDown} ref={thisTextArea} onBeforeInput={updateDomModel} className="textInput" onPaste={e => e.preventDefault()}>
+        <div id={useId()} suppressContentEditableWarning contentEditable={true} onKeyDown={keyDown}
+         onPasteCapture={paste} ref={thisTextArea} onBeforeInput={updateDomModel} className="textInput"
+          onPaste={e => e.preventDefault()} onDrop={onDrop}>
+
         {groupedModel.map((block, i) => {
                 const blockStyles: CSSProperties = {}
 
                 if (block.type == "align_right") {
-                    // blockStyles.display = "flex"
-                    // blockStyles.justifyContent = "end"
                     blockStyles.textAlign = "right"
                 }
                 else if (block.type == "align_center") {
-                    // blockStyles.display = "flex"
-                    // blockStyles.justifyContent = "center"
                     blockStyles.textAlign = "center"
                 }
 
@@ -371,11 +542,19 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                     <div key={i} style={blockStyles} >
                         {block.children.map((leaf, index) => {
                             let styles: CSSProperties = {}
+                            let override = null
 
                             if (leaf.styles) {
                                 styles = { ...leaf.styles.advanced }
 
                                 Object.entries(leaf.styles).forEach(([style, value]) => {
+                                    if (style == "image" && value) {
+                                        override = (
+                                            <Image src={(String)(value)} key={i + "-" + index} id={crypto.randomUUID()} />
+                                        )
+                                        return
+                                    }
+
                                     styles.textDecorationLine ??= ""
                                     if (style == "bold" && value) styles.fontWeight = 600
                                     if (style == "italic" && value) styles.fontStyle = "italic"
@@ -383,9 +562,10 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                                     if (style == "overline" && value) styles.textDecorationLine += " overline"
                                     if (style == "strikethrough" && value) styles.textDecorationLine += " line-through"
                                 })
+
                             }
 
-                            return (
+                            return override || (
                                 <span key={i + "-" + index} style={styles}>
                                     {leaf.text}
                                 </span>
@@ -393,9 +573,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                         })}
                     </div>
                 )
-            })}
-
-
+        })}
         </div>
     )
 }   

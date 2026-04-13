@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react"
 import { globalData } from "./main"
-import Image from "./Image"
+// import Image from "./Image"
 import { v4 as uuid4 } from "uuid"
 import Paragraph from "./Paragraph"
 
@@ -67,8 +67,6 @@ export default function TextInput({model, setModel} : EditorComponentProps) {
 
         strokes.pop()
 
-        console.log(strokes)
-
         context.current.clearRect(0, 0, window.innerWidth, window.innerHeight)
 
         for (const strokeArray of strokes) {
@@ -92,21 +90,21 @@ export default function TextInput({model, setModel} : EditorComponentProps) {
         }
     })
 
-    document.onpaste = event => {
-        const items = event.clipboardData?.items;
-        for (const index in items) {
-            const item = items[Number(index)];
-            if (item?.kind === 'file') {
-                const blob = item.getAsFile();
-                const reader = new FileReader();
-                reader.onload = function (event) {
-                    console.log("paste")
-                    setContent(prev => [...prev, { id: uuid4(), type: "Image", src: event.target?.result as string }])
-                }; // data url!
-                reader.readAsDataURL(blob!);
-            }
-        }
-    }
+    // document.onpaste = event => {
+    //     const items = event.clipboardData?.items;
+    //     for (const index in items) {
+    //         const item = items[Number(index)];
+    //         if (item?.kind === 'file') {
+    //             const blob = item.getAsFile();
+    //             const reader = new FileReader();
+    //             reader.onload = function (event) {
+    //                 console.log("paste")
+    //                 setContent(prev => [...prev, { id: uuid4(), type: "Image", src: event.target?.result as string }])
+    //             }; // data url!
+    //             reader.readAsDataURL(blob!);
+    //         }
+    //     }
+    // }
 
     return (
         <div id="textInputDiv">
@@ -116,8 +114,8 @@ export default function TextInput({model, setModel} : EditorComponentProps) {
                     switch (block.type) {
                         case "Paragraph":
                             return <Paragraph model={model} setModel={setModel} key={block.id} />
-                        case "Image":
-                            return <Image key={block.id} id={block.id} src={block.src} content={content} setContent={setContent} />
+                        // case "Image":
+                        //     return <Image key={block.id} id={block.id} src={block.src} content={content} setContent={setContent} />
                     }
                 })}
             </div>
