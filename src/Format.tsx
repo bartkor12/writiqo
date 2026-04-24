@@ -1,9 +1,10 @@
 import { position as CaretPosition } from "caret-pos"
 import type { CSSProperties } from "react"
+import { filterEmptyLeaf } from "./main"
 
 let savedSelection: { length: number, end: number, id : string } = { length: 0, end: 0, id : "" }
 
-export function getEditableContentDiv() {
+function getEditableContentDiv() {
     const selection = window.getSelection()
 
     // console.log(savedSelection)
@@ -69,7 +70,8 @@ export default function Format({ model, setModel, style, advanced = undefined }:
             console.warn("errored on createRangeFromPositions : editableContentDiv")
             return range
         }
-        const flatDomRepresentation = Array.from(editableContentDiv.querySelectorAll("*")).filter(item => item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE)
+        // const flatDomRepresentation = Array.from(editableContentDiv.querySelectorAll("*")).filter(item => item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE)
+        const flatDomRepresentation = Array.from(editableContentDiv.querySelectorAll("*")).filter(item => (item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE) || item instanceof HTMLImageElement )
         const startNode = flatDomRepresentation[getLeafIndexFromCaretPosition(start)].firstChild
         const endNode = flatDomRepresentation[getLeafIndexFromCaretPosition(end)].firstChild
         
@@ -172,7 +174,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         newModel.splice(startLeafIndex + 1, 0, { text: newModel[startLeafIndex].text.slice(startLeafOffset, newModel[startLeafIndex].text.length), styles: { ...newModel[startLeafIndex].styles, [style]: !newModel[startLeafIndex].styles[style], advanced : advancedStyles(startLeafIndex) } })
         newModel[startLeafIndex].text = newModel[startLeafIndex].text.slice(0, startLeafOffset)
 
-        newModel = newModel.filter(item => item.text !== '')
+        newModel = filterEmptyLeaf(newModel)
     }
     else {
         const leaf = newModel[leafIndex]
@@ -182,7 +184,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         newModel.splice(leafIndex + 2, 0, { text: leaf.text.slice(endLeafOffset, leaf.text.length), styles: leaf.styles })
         leaf.text = leaf.text.slice(0, startLeafOffset)
 
-        newModel = newModel.filter(item => item.text !== '')
+        newModel = filterEmptyLeaf(newModel)
     }
 
     setModel(newModel)

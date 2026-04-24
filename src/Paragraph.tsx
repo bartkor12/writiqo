@@ -1,6 +1,7 @@
-import React, { useId, useLayoutEffect, useRef, type CSSProperties } from "react"
+import React, { useCallback, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react"
 import { position as CaretPosition } from "caret-pos"
 import Format from "./Format"
+import { filterEmptyLeaf } from "./main"
 
 interface EditorComponentProps {
     model: Leaf[],
@@ -105,7 +106,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         
         function removeEmpty() {
 
-            newModel = newModel.filter(item => item.text !== "")
+            newModel = filterEmptyLeaf(newModel)
             
             // fixes enter key
             for (let i = 0; i < newModel.length; i++) {
@@ -115,6 +116,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                     newModel[i].text = "\n\u2028"
                     caretPosition.current += 1
                 }
+
                 
                 if (i < newModel.length && newModel[i].text == '\u2028') newModel.splice(i,1)
             }
@@ -459,27 +461,8 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         }
     }
 
-    function Image({src, id} : {src : string, id : string}) {
-        
-        function onDragStart(e : React.DragEvent<HTMLImageElement>) {
-            e.dataTransfer.effectAllowed = "move"
-            e.dataTransfer.setData("text/plain","")
-            e.dataTransfer.setData("text/uri-list","")
-
-            const blankImage = document.createElement("img");
-            blankImage.src =
-                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
-
-            e.dataTransfer.setDragImage(blankImage, 0, 0);
-        }
-
-        return (
-            <img src={src} onDragStart={onDragStart} onDrop={e => e.preventDefault()} id={id}/>
-        )
-    }
-
-    function onDrop(e : React.DragEvent) {
-        e.preventDefault() 
+    function onDrop(e: React.DragEvent) {
+        e.preventDefault()
         e.stopPropagation()
         if (!window.getSelection()?.isCollapsed) return
         if (!thisTextArea.current) return
@@ -496,16 +479,25 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
         if (leafIndex < 0) return
 
-        const newModel: Leaf[] = makeNewModel()
+        let newModel: Leaf[] = makeNewModel()
         const newModelLeaf = newModel[leafIndex]
         const cachedText = newModelLeaf.text
+        const imgIndex = flatDomRepresentation.map(el => el.id).indexOf(img.id)
 
-        console.log(newModel,flatDomRepresentation)
-        newModel.splice(flatDomRepresentation.map(el => el.id).indexOf(img.id),1)
+        console.log(newModel.map(e => e.text ?? e.styles?.image),flatDomRepresentation.map(e => e instanceof HTMLSpanElement ? e.textContent : e))
+        console.log(newModel.length,flatDomRepresentation.length,cachedText,leafIndex)
+        
+        if (newModel.length != flatDomRepresentation.length) {
+            console.warn("length match error")
+            return
+        }
+        
+        newModel.splice(imgIndex,1)
 
         newModelLeaf.text = cachedText.slice(0, leafOffset)
         
-        newModel.splice(leafIndex + 1, 0, {
+        // console.log(newModel.map(item => item.text))
+        newModel.splice(leafIndex, 0, {
             text: "",
             styles: {
                 image: img.src,
@@ -513,13 +505,78 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             }
         })
         
-        newModel.splice(leafIndex + 2, 0, {
-            text: "\u2028" + cachedText.slice(leafOffset, cachedText.length),
-            styles: newModelLeaf.styles
-        })
-
+        console.log(leafIndex + 1, newModel.length)
+        if (newModel.length >= (leafIndex + 1) && cachedText.slice(leafOffset).length > 0) { 
+            newModel.splice(leafIndex + 1, 0, {
+                text: (newModel[leafIndex + 1] ? (newModel[leafIndex + 1].text == "\u2028" ? "" : "\u2028") : "") + cachedText.slice(leafOffset),
+                styles: newModelLeaf.styles
+            })
+        }
+        newModel = newModel.filter(item => item.text.length > 0 || item.styles?.image)
 
         setModel(newModel)
+    }
+
+    function Image({src, id} : {src : string, id : string}) {
+
+        const [draggable,setDraggable] = useState<boolean>(true)
+        const [size,setSize] = useState<{x : number, y : number} | null>(null)
+        const styles : CSSProperties = { "userSelect": "none", "WebkitUserSelect": "none", "cursor" : draggable ? "grab" : "nwse-resize",
+             "width" : size?.x , "height" : size?.y, "minWidth" : 50,"minHeight" : 50 }
+        let pos = useRef({
+            x : 0,
+            y : 0
+        })
+        
+        function onDragStart(e : React.DragEvent<HTMLImageElement>) {
+            e.dataTransfer.effectAllowed = "move"
+            e.dataTransfer.setData("text/plain","")
+            e.dataTransfer.setData("text/uri-list","")
+
+            const blankImage = document.createElement("img");
+            blankImage.src =
+                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+            e.dataTransfer.setDragImage(blankImage, 0, 0);
+        }
+
+        const onMouseMove = useCallback((e: MouseEvent) => {
+            setSize({
+                x: e.clientX - pos.current.x + 20,
+                y: e.clientY - pos.current.y + 20
+            })
+        }, [pos])
+        
+        function collapseSelection(e : React.MouseEvent) {
+            window.getSelection()?.collapse(e.currentTarget)
+        }
+
+        function resize(e : React.MouseEvent<HTMLImageElement>) {
+            e.preventDefault()
+            collapseSelection(e)
+            setDraggable(!draggable)
+            pos.current = {x : e.currentTarget.x,y : e.currentTarget.y}
+
+            console.log(draggable)
+            if (draggable) {
+                
+                document.removeEventListener("mousemove", onMouseMove)
+            }
+            else {
+                document.addEventListener("mousemove", onMouseMove)
+            }
+        }
+
+        function onLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+            setSize({
+                x: e.currentTarget.clientWidth,
+                y: e.currentTarget.clientHeight
+            })
+        }
+
+        return (
+            <img onLoad={onLoad} draggable={draggable} src={src} style={styles} onMouseDown={collapseSelection} onClick={resize} onDragStart={onDragStart} onDrop={e => e.preventDefault()} id={id} />
+        )
     }
 
     // paginatedModel ??= [groupedModel]

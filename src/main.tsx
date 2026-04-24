@@ -6,16 +6,12 @@ export const globalData = {
   activeTool: "type"
 }
 
-export function setBlockRect(props: any, rect: DOMRect) {
-  props.setContent((prev: Array<Block>) => {
-    return prev.map(block => {
-      return block.id === props.id ? { ...block, rect } : block
-    })
-  })
-}
-
 export function delay(delay: number) {
   return new Promise(res => setTimeout(res, delay));
+}
+
+export function filterEmptyLeaf(array: Leaf[]) {
+  return array.filter(item => item.text !== "" || item.styles?.image)
 }
 
 
