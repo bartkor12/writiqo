@@ -107,18 +107,29 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         function removeEmpty() {
 
             newModel = filterEmptyLeaf(newModel)
-            
+
             // fixes enter key
             for (let i = 0; i < newModel.length; i++) {
-                if (i + 1 < newModel.length && newModel[i].text == "\n" && newModel[i + 1].text == '\u2028') i += 2
+                if (i + 1 < newModel.length && newModel[i].text == "\n") {
 
-                if (i + 1 < newModel.length && newModel[i].text == "\n" && newModel[i + 1].text != '\u2028') {
-                    newModel[i].text = "\n\u2028"
-                    caretPosition.current += 1
+                    if (newModel[i + 1].text == '\u2028') {
+                        i += 2
+                    }
+                    else {
+                        newModel[i].text = "\n\u2028"
+                        caretPosition.current += 1
+                    }
                 }
 
-                
-                if (i < newModel.length && newModel[i].text == '\u2028') newModel.splice(i,1)
+                if (i > newModel.length) return
+
+                if (newModel[i].text == '\u2028') newModel.splice(i, 1)
+
+                if (newModel[i] && newModel[i].text.startsWith("\u2028") && i > 0) {
+                    if (!(newModel[i - 1]?.styles && newModel[i - 1].styles?.image)) {
+                        newModel[i].text = newModel[i].text.replace(/^\u2028+/, "")
+                    }
+                }
             }
         }
         
@@ -175,8 +186,9 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
         console.log(newModel)
 
-        if (e.ctrlKey && e.key === "c") {
-            document.execCommand("copy")
+        if (e.ctrlKey && e.key === "c" && !window.getSelection()?.isCollapsed) {
+            // document.execCommand("copy") 
+            navigator.clipboard.writeText(window.getSelection()!.toString())
         }
 
         const leafIndexText = newModel[leafIndex].text
@@ -258,8 +270,9 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             }
         } // deletes \u2028\n on the same line
 
-        if (!newModel[0] ) {
-            newModel.splice(0, 0, { text: '\u2028\u2028' })
+        if (!newModel[0] || !newModel[0].text.startsWith("\u2060")) {
+            newModel.splice(0, 0, { text: '\u2060\u2060' })
+            removeEmpty()
             caretPosition.current += 2
         }
 
@@ -286,6 +299,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
     } 
 
     useLayoutEffect(() => {
+        if (caretPosition.current == 0) caretPosition.current = 1
         CaretPosition(thisTextArea.current!, caretPosition.current + 1)
         console.log(caretPosition.current,undoModel)
 
@@ -475,7 +489,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         if (!offsetNode) return
         
         const leafOffset = offset.offset
-        const leafIndex = flatDomRepresentation.indexOf(offsetNode)
+        let leafIndex = flatDomRepresentation.indexOf(offsetNode)
 
         if (leafIndex < 0) return
 
@@ -493,6 +507,8 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         }
         
         newModel.splice(imgIndex,1)
+        if (imgIndex > leafIndex) leafIndex += 1
+        // this gets deleted so the whole thing gets shifted so it goes 1 back
 
         newModelLeaf.text = cachedText.slice(0, leafOffset)
         
@@ -523,7 +539,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         const [size,setSize] = useState<{x : number, y : number} | null>(null)
         const styles : CSSProperties = { "userSelect": "none", "WebkitUserSelect": "none", "cursor" : draggable ? "grab" : "nwse-resize",
              "width" : size?.x , "height" : size?.y, "minWidth" : 50,"minHeight" : 50 }
-        let pos = useRef({
+        const pos = useRef({
             x : 0,
             y : 0
         })
@@ -559,7 +575,6 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
             console.log(draggable)
             if (draggable) {
-                
                 document.removeEventListener("mousemove", onMouseMove)
             }
             else {
@@ -619,7 +634,6 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                                     if (style == "overline" && value) styles.textDecorationLine += " overline"
                                     if (style == "strikethrough" && value) styles.textDecorationLine += " line-through"
                                 })
-
                             }
 
                             return override || (
