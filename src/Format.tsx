@@ -135,7 +135,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
     
     saveRange()
     
-    let newModel: Leaf[] = model.map(leaf => ({
+    const newModel: Leaf[] = model.map(leaf => ({
         ...leaf,
         styles: {
             ...leaf.styles,
@@ -174,7 +174,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         newModel.splice(startLeafIndex + 1, 0, { text: newModel[startLeafIndex].text.slice(startLeafOffset, newModel[startLeafIndex].text.length), styles: { ...newModel[startLeafIndex].styles, [style]: !newModel[startLeafIndex].styles[style], advanced : advancedStyles(startLeafIndex) } })
         newModel[startLeafIndex].text = newModel[startLeafIndex].text.slice(0, startLeafOffset)
 
-        newModel = filterEmptyLeaf(newModel)
+        filterEmptyLeaf(newModel)
     }
     else {
         const leaf = newModel[leafIndex]
@@ -184,7 +184,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         newModel.splice(leafIndex + 2, 0, { text: leaf.text.slice(endLeafOffset, leaf.text.length), styles: leaf.styles })
         leaf.text = leaf.text.slice(0, startLeafOffset)
 
-        newModel = filterEmptyLeaf(newModel)
+        filterEmptyLeaf(newModel)
     }
 
     setModel(newModel)

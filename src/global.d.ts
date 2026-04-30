@@ -21,7 +21,8 @@ declare global {
             strikethrough? :boolean,
             list? :boolean,
             image? : string
-        }
+        },
+        id? : string
     };
     interface FormatTypes {
         model: Leaf[],

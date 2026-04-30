@@ -14,10 +14,12 @@ export function filterEmptyLeaf(array: Leaf[]) {
   return array.filter(item => item.text !== "" || item.styles?.image)
 }
 
+const root = document.getElementById('root')
 
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Editor />
-  </StrictMode>,
-)
+if (root) {
+  createRoot(root).render(
+    <StrictMode>
+      <Editor />
+    </StrictMode>,
+  )
+}
