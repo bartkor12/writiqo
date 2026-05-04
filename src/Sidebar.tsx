@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import './App.css'
-import {delay} from './main.tsx'
+import {delay} from './Editor.tsx'
 import { LazySvg } from './lazy-svg.tsx'
 const tools = [
   "write",

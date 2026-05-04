@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react"
-import { globalData } from "./main"
+import { globalData } from "./Editor"
 // import Image from "./Image"
 import { v4 as uuid4 } from "uuid"
 import Paragraph from "./Paragraph"

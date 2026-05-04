@@ -1,7 +1,7 @@
 import React, { useCallback, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react"
 import { position as CaretPosition } from "caret-pos"
 import Format from "./Format"
-import { filterEmptyLeaf } from "./main"
+import { filterEmptyLeaf } from "./Editor"
 
 interface EditorComponentProps {
     model: Leaf[],
@@ -65,10 +65,6 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
     function formatSelection(e: React.KeyboardEvent) {
         const selectionLength = window.getSelection()!.toString().length
-        const startLeafIndex = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength)
-        const leafIndex: number = getLeafIndexFromCaretPosition(caretPosition.current)
-        const startLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength, true)
-        const endLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current, true)
         let style: "italic" | "bold" | "underline" | "overline" | "" = ""
 
         if (e.ctrlKey) {
@@ -108,33 +104,40 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
             // newModel = filterEmptyLeaf(newModel)
 
-            let changedModel: Leaf[] = []
+            const changedModel: Leaf[] = []
 
             for (let i = 0; i < newModel.length; i++) {
                 const leaf = newModel[i];
 
-                if (leaf.text == "\n\u2028") {
+                if (leaf.text == "\n\u200B") {
                     changedModel.push(leaf)
                     continue
                 }
+
                 // console.log(leaf.text.startsWith("\n"))
                 // if (leaf.text.startsWith("\n")) {
                 //     const originalLength = leaf.text.length
-                //     leaf.text = leaf.text.replace(/^\n/, "\n\u2028").replace(/(?<=\n\u2028)\u2028+/g, "")
+                //     leaf.text = leaf.text.replace(/^\n/, "\n\u200B").replace(/(?<=\n\u200B)\u200B+/g, "")
                 //     caretPosition.current -= originalLength - leaf.text.length
                 //     caretPosition.current++
                 //     changedModel.push(leaf)
                 //     continue
                 // }
 
-                if (leaf.text == "\u2028") continue
+                if (leaf.text == "\u200B") {
+                    
+                    if (i > 0 && newModel[i - 1]?.styles?.image) {
+                        changedModel.push(leaf)
+                    }
+                    continue
+                }
 
-                leaf.text = leaf.text.replace(/^\u2028+/, "")
+                leaf.text = leaf.text.replace(/^\u200B+/, "")
 
                 changedModel.push(leaf)
 
                 if (leaf.styles?.image) {
-                    changedModel.push({ text : "\u2028"})
+                    changedModel.push({ text : "\u200B"})
                 }
 
             }
@@ -147,23 +150,23 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
                 if (i + 1 < newModel.length && leaf.text == "\n") {
 
-                    if (newModel[i + 1].text == '\u2028') {
+                    if (newModel[i + 1].text == '\u200B') {
                         i += 2
                     }
                     else {
-                        leaf.text = "\n\u2028"
+                        leaf.text = "\n\u200B"
                         caretPosition.current += 1
                     }
                 }
 
                 if (i > newModel.length) return
 
-                // if (leaf.text.startsWith("\u2028") && !newModel[i - 1].styles?.image) {
-                //     leaf.text = leaf.text.replace(/^\u2028+/, "")
+                // if (leaf.text.startsWith("\u200B") && !newModel[i - 1].styles?.image) {
+                //     leaf.text = leaf.text.replace(/^\u200B+/, "")
                 // }
 
-                // if (leaf.styles?.image && i + 1 < newModel.length && !newModel[i + 1].text.startsWith("\u2028")) {
-                //     newModel.splice(i, 0, { text: "\u2028" })
+                // if (leaf.styles?.image && i + 1 < newModel.length && !newModel[i + 1].text.startsWith("\u200B")) {
+                //     newModel.splice(i, 0, { text: "\u200B" })
                 //     i++
                 //     console.log("new")
                 // }
@@ -201,7 +204,24 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         if (e.key === "ArrowRight" && caretPosition.current >= 0) {
             caretPosition.current += 1
         }
+        
+        const startLeafIndex = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength)
+        const leafIndex: number = getLeafIndexFromCaretPosition(caretPosition.current)
+        const startLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength, true)
+        const endLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current, true)
+        
+        if (e.key === "Home") {
+            e.preventDefault()
+            const textToStartLine = newModel.slice(0,leafIndex+1).map(el => el.text).join("").split("\n\u200B")
+            textToStartLine.pop()
+            const lengthToStartLine = textToStartLine.join("").length + textToStartLine.length * 2
 
+            const caretToStart = lengthToStartLine
+
+            console.log(textToStartLine)
+
+            caretPosition.current = caretToStart
+        }
         // erase and delete
         console.log("input")
 
@@ -227,8 +247,10 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
         console.log(newModel)
 
+        console.log(startLeafOffset,e.key)
+        caretPosition.current += newModel[startLeafIndex].text[startLeafOffset] == "\u200B" && newModel[startLeafIndex]?.text[startLeafOffset - 1] == "\n" ? 1 : 0
+
         if (e.ctrlKey && e.key === "c" && !window.getSelection()?.isCollapsed) {
-            // document.execCommand("copy") useLayoutEf
             navigator.clipboard.writeText(window.getSelection()!.toString())
         }
 
@@ -244,13 +266,12 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             if (leafIndex - startLeafIndex > 1) {
                 newModel.splice(startLeafIndex + 1, leafIndex - startLeafIndex - 1);
             }
-
         }
         else {
             if ((e.key === "Backspace" || e.key === "Delete") && startLeafOffset == endLeafOffset) {
-                if (e.ctrlKey && newModel[startLeafIndex].text != "" && leafIndexText != '\n\u2028') {
+                if (e.ctrlKey && newModel[startLeafIndex].text != "" && leafIndexText != '\n\u200B') {
                     const firstHalf = newModel.slice(0, leafIndex + 1).flatMap(leaf => leaf.text).join("").slice(0, caretPosition.current)
-                    const newLineOffset = firstHalf.split('\n\u2028').reverse().filter(item => item !== "")[0].length
+                    const newLineOffset = firstHalf.split('\n\u200B').reverse().filter(item => item !== "")[0].length
                     const spaceLeafOffset = firstHalf.split(" ").reverse().filter(item => item !== "")[0].length
                     const deletionOffset = Math.min(spaceLeafOffset, newLineOffset)
                     const spacePosition = caretPosition.current - deletionOffset
@@ -261,11 +282,11 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                         // console.log("hiiii2" + leafIndexText.slice(startLeafOffset, leafIndexText.length)
                         console.log("here")
                         newModel[spaceLeafIndex].text = newModel[spaceLeafIndex].text.slice(0, getLeafIndexFromCaretPosition(spacePosition, true))
-                        newModel[leafIndex].text = leafIndexText.slice(startLeafOffset, leafIndexText.length).replace(/[\n\u2028 ]/g, "")
+                        newModel[leafIndex].text = leafIndexText.slice(startLeafOffset, leafIndexText.length).replace(/[\n\u200B ]/g, "")
                     }
                     else {
                         console.log("right here")
-                        newModel[leafIndex].text = leafIndexText.slice(0, getLeafIndexFromCaretPosition(spacePosition, true)) + leafIndexText.slice(endLeafOffset, leafIndexText.length).replace(/[\n\u2028 ]/g, "")
+                        newModel[leafIndex].text = leafIndexText.slice(0, getLeafIndexFromCaretPosition(spacePosition, true)) + leafIndexText.slice(endLeafOffset, leafIndexText.length).replace(/[\n\u200B ]/g, "")
                     }
                     if (leafIndex - spaceLeafIndex > 1) {
                         newModel.splice(spaceLeafIndex + 1, leafIndex - spaceLeafIndex - 1);
@@ -274,7 +295,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                 }
                 else {
                     console.log(leafIndexText)
-                    if (leafIndexText == "\n\u2028") {
+                    if (leafIndexText == "\n\u200B") {
                         if (getLeafIndexFromCaretPosition(caretPosition.current, true) == 1) caretPosition.current += 1
                         newModel.splice(leafIndex, 1)
                         caretPosition.current -= 1
@@ -305,7 +326,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             else if (e.key === "Enter") {
                 const styles = newModel[leafIndex].styles
                 newModel.splice(leafIndex, 1, { text: leafIndexText.slice(0, startLeafOffset), styles })
-                newModel.splice(leafIndex + 1, 0, { text: "\n\u2028", styles })
+                newModel.splice(leafIndex + 1, 0, { text: "\n\u200B", styles })
                 newModel.splice(leafIndex + 2, 0, { text: leafIndexText.slice(startLeafOffset), styles })
                 removeEmpty()
                 caretPosition.current += 2
@@ -313,7 +334,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             else if (!e.ctrlKey) {
                 newModel[leafIndex].text = leafIndexText.slice(0, startLeafOffset) + leafIndexText.slice(endLeafOffset, leafIndexText.length)
             }
-        } // deletes \u2028\n on the same line
+        } // deletes \u200B\n on the same line
 
         if (!newModel[0] || !newModel[0].text.startsWith("\u2060")) {
             newModel.splice(0, 0, { text: '\u2060\u2060' })
@@ -500,10 +521,13 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                     })
 
                     newModel.splice(nextLeafIndex + 2, 0, {
-                        text: cachedText.slice(getLeafIndexFromCaretPosition(caretPosition.current + 1, true), cachedText.length),
+                        text: cachedText.slice(getLeafIndexFromCaretPosition(caretPosition.current + 1, true)),
                         styles: newModelLeaf.styles
                     })
 
+                    if (cachedText.slice(getLeafIndexFromCaretPosition(caretPosition.current + 1, true)).length === 0) {
+                        newModel.splice(nextLeafIndex + 2, 0, { text: "\u200B" })
+                    }
 
                     caretPosition.current += 1
                     setModel(newModel)
@@ -650,14 +674,14 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             const newModel = makeNewModel()
             const imgIndex = newModel.map(el => el.id).findIndex(el => el == id)
             newModel.splice(imgIndex, 1)
-            if (imgIndex + 1 < newModel.length && newModel[imgIndex + 1].text == "\u2028") newModel.splice(imgIndex + 1, 1)
-            if (newModel[imgIndex - 1].text == "\u2028") newModel.splice(imgIndex - 1, 1)
+            if (imgIndex + 1 < newModel.length && newModel[imgIndex + 1].text == "\u200B") newModel.splice(imgIndex + 1, 1)
+            if (newModel[imgIndex - 1].text == "\u200B") newModel.splice(imgIndex - 1, 1)
 
             setModel(newModel)
         }
 
         return (
-            <div className="imgDiv">
+            <div className="imgDiv" contentEditable={false}>
                 <img onLoad={onLoad} draggable={draggable} src={src} style={styles} onMouseDown={collapseSelection} onClick={resize} onDragStart={onDragStart} onDrop={e => e.preventDefault()} id={id} />
                 <div className="deleteImgButton" onClick={onClickdelete} />
             </div>

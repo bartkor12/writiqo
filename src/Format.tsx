@@ -1,6 +1,6 @@
 import { position as CaretPosition } from "caret-pos"
 import type { CSSProperties } from "react"
-import { filterEmptyLeaf } from "./main"
+import { filterEmptyLeaf } from "./Editor"
 
 let savedSelection: { length: number, end: number, id : string } = { length: 0, end: 0, id : "" }
 
@@ -75,6 +75,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         const startNode = flatDomRepresentation[getLeafIndexFromCaretPosition(start)].firstChild
         const endNode = flatDomRepresentation[getLeafIndexFromCaretPosition(end)].firstChild
         
+        console.log(model,flatDomRepresentation.map(el => el.textContent))
         if (!startNode || !endNode) {
             console.warn("errored on createRangeFromPositions: startElement || endElement")
             return range
@@ -135,7 +136,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
     
     saveRange()
     
-    const newModel: Leaf[] = model.map(leaf => ({
+    let newModel: Leaf[] = model.map(leaf => ({
         ...leaf,
         styles: {
             ...leaf.styles,
@@ -174,7 +175,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         newModel.splice(startLeafIndex + 1, 0, { text: newModel[startLeafIndex].text.slice(startLeafOffset, newModel[startLeafIndex].text.length), styles: { ...newModel[startLeafIndex].styles, [style]: !newModel[startLeafIndex].styles[style], advanced : advancedStyles(startLeafIndex) } })
         newModel[startLeafIndex].text = newModel[startLeafIndex].text.slice(0, startLeafOffset)
 
-        filterEmptyLeaf(newModel)
+        newModel = filterEmptyLeaf(newModel)
     }
     else {
         const leaf = newModel[leafIndex]
@@ -184,7 +185,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         newModel.splice(leafIndex + 2, 0, { text: leaf.text.slice(endLeafOffset, leaf.text.length), styles: leaf.styles })
         leaf.text = leaf.text.slice(0, startLeafOffset)
 
-        filterEmptyLeaf(newModel)
+        newModel = filterEmptyLeaf(newModel)
     }
 
     setModel(newModel)
