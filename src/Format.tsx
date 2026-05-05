@@ -50,7 +50,8 @@ export default function Format({ model, setModel, style, advanced = undefined }:
             const leaf = model[index];
 
             if (getOffset && stringLength + leaf.text.length > caretPosition) {
-                return caretPosition - stringLength + 1
+                console.warn(caretPosition, stringLength + 1, caretPosition - stringLength + 1, leaf.styles?.image)
+                return Math.max(0,caretPosition - stringLength + 1)
             }
 
             stringLength += leaf.text.length
@@ -74,7 +75,7 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         const flatDomRepresentation = Array.from(editableContentDiv.querySelectorAll("*")).filter(item => (item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE) || item instanceof HTMLImageElement )
         const startNode = flatDomRepresentation[getLeafIndexFromCaretPosition(start)].firstChild
         const endNode = flatDomRepresentation[getLeafIndexFromCaretPosition(end)].firstChild
-        
+
         console.log(model,flatDomRepresentation.map(el => el.textContent))
         if (!startNode || !endNode) {
             console.warn("errored on createRangeFromPositions: startElement || endElement")
@@ -93,13 +94,12 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         return range
     }
 
-    function saveRange() {
-        const selection = window.getSelection()
+    const selection = window.getSelection()
 
+    function saveRange() {
         if (selection && !selection.isCollapsed && document.getElementById("textInputDiv")?.contains(selection.anchorNode)) {
             console.log(savedSelection)
             savedSelection = { length: selectionLength, end: caretPosition, id : editableContentDivId }
-            console.log(savedSelection)
         }
         console.log("helloooo")
     }
@@ -128,12 +128,13 @@ export default function Format({ model, setModel, style, advanced = undefined }:
         return leaf.styles!.advanced ?? {}
     }
     
-    const selectionLength = window.getSelection()!.toString().length
+    const imgCount = selection?.getRangeAt(0)?.cloneContents()?.querySelectorAll("img")?.length
+    const selectionLength = window.getSelection()!.toString().length - (imgCount ?? 0)
     const startLeafIndex = getLeafIndexFromCaretPosition(caretPosition - selectionLength)
     const leafIndex: number = getLeafIndexFromCaretPosition(caretPosition)
     const startLeafOffset = getLeafIndexFromCaretPosition(caretPosition - selectionLength, true)
     const endLeafOffset = getLeafIndexFromCaretPosition(caretPosition, true)
-    
+
     saveRange()
     
     let newModel: Leaf[] = model.map(leaf => ({
