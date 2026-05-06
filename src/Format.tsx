@@ -1,6 +1,6 @@
 import { position as CaretPosition } from "caret-pos"
 import type { CSSProperties } from "react"
-import { filterEmptyLeaf } from "./Editor"
+import { filterEmptyLeaf } from "./pages/Editor"
 
 let savedSelection: { length: number, end: number, id : string } = { length: 0, end: 0, id : "" }
 

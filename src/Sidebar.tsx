@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react'
 import './App.css'
-import {delay} from './Editor.tsx'
+import {delay} from './pages/Editor.tsx'
 import { LazySvg } from './lazy-svg.tsx'
+// ? drawing could be possible future feature, for now releasing and maintaining the website is more important
 const tools = [
   "write",
-  "brush"
+  // "brush"
 ]
 
-export default function App() {
+export default function Sidebar() {
   const mousedown = useRef(false)
   const sidebar = useRef<HTMLDivElement>(null!)
   const [sliderX, setSliderX] = useState(0)

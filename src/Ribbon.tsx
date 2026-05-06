@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, type CSSProperties, type ReactNode } from "react"
 import createFuzzySearch from '@nozbe/microfuzz'
-import { v4 as uuid4 } from "uuid"
 import Format from "./Format";
 import { RgbaColorPicker, type RgbaColor } from "react-colorful";
 import Swal from "sweetalert2"
+import LoginButton from "./LoginButton";
 
 function pressFlash(el: HTMLElement) {
     el.classList.remove("press-flash")
@@ -126,42 +126,47 @@ export default function Ribbon({model,setModel} : RibbonTypes) {
                 <Import setModel={setModel}/>
             </Dropdown>
         </div>
-        <div id="ribbon">
-            <div style={{display : "flex", flexDirection : "column", gap : 5}}>
-                <span className="descriptor">Text Modifications</span>
-                <div style={{display : "flex", gap: 5}}>
-                    <ColorPickerButton src={"format_color_text.svg"} style="color" model={model} setModel={setModel} />
-                    <div className="formatContainer formatButtonContainer">
-                        <FormatButton model={model} setModel={setModel} style="bold" />
-                        <FormatButton model={model} setModel={setModel} style="strikethrough" />
-                        <FormatButton model={model} setModel={setModel} style="overline" />
-                        <FormatButton model={model} setModel={setModel} style="underline" />
+        <div id="ribbonWrapper">
+            <div id="ribbon">
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    <span className="descriptor">Text Modifications</span>
+                    <div style={{ display: "flex", gap: 5 }}>
+                        <ColorPickerButton src={"format_color_text.svg"} style="color" model={model} setModel={setModel} />
+                        <div className="formatContainer formatButtonContainer">
+                            <FormatButton model={model} setModel={setModel} style="bold" />
+                            <FormatButton model={model} setModel={setModel} style="strikethrough" />
+                            <FormatButton model={model} setModel={setModel} style="overline" />
+                            <FormatButton model={model} setModel={setModel} style="underline" />
+                        </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 5 }}>
+                        <ColorPickerButton src={"format_color_fill.svg"} style="backgroundColor" model={model} setModel={setModel} />
+                        <FormatSlider model={model} setModel={setModel} style="letterSpacing" type="horizontal" unit="%" min={0} max={100} sensitivity={1} />
+                        <div className="formatContainer formatButtonContainer">
+                            <FormatButton model={model} setModel={setModel} style="list" />
+                        </div>
                     </div>
                 </div>
-                <div style={{ display: "flex", gap: 5 }}>
-                    <ColorPickerButton src={"format_color_fill.svg"} style="backgroundColor" model={model} setModel={setModel} />
-                    <FormatSlider model={model} setModel={setModel} style="letterSpacing" type="horizontal" unit="%" min={0} max={100} sensitivity={1} />
-                    <div className="formatContainer formatButtonContainer">
-                        <FormatButton model={model} setModel={setModel} style="list" />
+                <div className="ribbonSpacer" />
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    <span className="descriptor">Font Options</span>
+                    <FontDropdownContainer model={model} setModel={setModel} />
+                    <div style={{ display: "flex", gap: 18 }}>
+                        <FormatSlider model={model} setModel={setModel} style="fontSize" type="vertical" unit="px" min={0} max={150} sensitivity={1} />
+                        <div className="formatContainer formatButtonContainer">
+                            <FormatButton model={model} setModel={setModel} style="none" advanced={{ property: "textAlign", value: "left", overwrite: true }} />
+                            <FormatButton model={model} setModel={setModel} style="none" advanced={{ property: "textAlign", value: "right", overwrite: true }} />
+                            <FormatButton model={model} setModel={setModel} style="none" advanced={{ property: "textAlign", value: "justify", overwrite: true }} />
+                            <FormatButton model={model} setModel={setModel} style="none" advanced={{ property: "textAlign", value: "center", overwrite: true }} />
+                        </div>
                     </div>
                 </div>
             </div>
-            <div className="ribbonSpacer" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span className="descriptor">Font Options</span>
-                <FontDropdownContainer model={model} setModel={setModel}/>
-                <div style={{display: "flex", gap: 18}}>
-                    <FormatSlider model={model} setModel={setModel} style="fontSize" type="vertical" unit="px" min={0} max={150} sensitivity={1} />
-                    <div className="formatContainer formatButtonContainer">
-                        <FormatButton model={model} setModel={setModel} style="none" advanced={{property : "textAlign", value: "left", overwrite : true}} />
-                        <FormatButton model={model} setModel={setModel} style="none" advanced={{property : "textAlign", value: "right", overwrite : true}} />
-                        <FormatButton model={model} setModel={setModel} style="none" advanced={{property : "textAlign", value: "justify", overwrite : true}} />
-                        <FormatButton model={model} setModel={setModel} style="none" advanced={{property : "textAlign", value: "center", overwrite : true}}/>
-                    </div>
-                </div>
+            <div id="rightRibbon">
+                <LoginButton />
             </div>
         </div>
-        </>
+    </>
     )
 }
 
@@ -240,7 +245,7 @@ function FontDropdownContainer({ model, setModel }: {
             </div>
             <div className="fontDropdown">
                 {fontsToDisplay?.map(item => {
-                    return <button key={uuid4()} onClick={fontButtonClick}>{item}</button>
+                    return <button key={crypto.randomUUID()} onClick={fontButtonClick}>{item}</button>
                 })}
             </div>
         </div>

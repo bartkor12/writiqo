@@ -1,7 +1,7 @@
 import React, { useCallback, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react"
 import { position as CaretPosition } from "caret-pos"
 import Format from "./Format"
-import { filterEmptyLeaf } from "./Editor"
+import { filterEmptyLeaf } from "./pages/Editor"
 
 interface EditorComponentProps {
     model: Leaf[],
@@ -612,13 +612,20 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         setModel(newModel)
     }
 
-    function Image({ src, id }: { src: string, id: string }) {
+    function Image({ src, id, style }: { src: string, id: string, style : CSSProperties }) {
 
-        const [draggable, setDraggable] = useState<boolean>(true)
-        const [size, setSize] = useState<{ x: number, y: number } | null>(null)
+        const sizeInModel = {
+            x: typeof style.width == "number" ? style.width : parseInt(style.width as string),
+            y: typeof style.height == "number" ? style.height : parseInt(style.height as string)
+        }
+        const [size, setSize] = useState<{ x: number, y: number }>(() => ({
+            x: sizeInModel.x || 0,
+            y: sizeInModel.y || 0,
+        }))
+        const [draggable, setDraggable] = useState<boolean>(false)
         const styles: CSSProperties = {
             "userSelect": "none", "WebkitUserSelect": "none", "cursor": draggable ? "grab" : "nwse-resize",
-            "width": size?.x, "height": size?.y, "minWidth": 50, "minHeight": 50
+            "width": size?.x, "height": size?.y, "minWidth": 60, "minHeight": 60
         }
         const pos = useRef({
             x: 0,
@@ -657,6 +664,12 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
             console.log(draggable)
             if (draggable) {
                 document.removeEventListener("mousemove", onMouseMove)
+                const newModel = makeNewModel()
+                const imgIndex = newModel.map(el => el.id).findIndex(el => el == id)
+                newModel[imgIndex].styles.advanced ??= {}
+                newModel[imgIndex].styles.advanced.width = size?.x
+                newModel[imgIndex].styles.advanced.height = size?.y
+                setModel(newModel)
             }
             else {
                 document.addEventListener("mousemove", onMouseMove)
@@ -716,7 +729,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                                 Object.entries(leaf.styles).forEach(([style, value]) => {
                                     if (style == "image" && value) {
                                         override = (
-                                            <Image src={(String)(value)} key={i + "-" + index} id={leaf.id ?? ""} />
+                                            <Image src={(String)(value)} style={styles} key={i + "-" + index} id={leaf.id ?? ""} />
                                         )
                                         return
                                     }

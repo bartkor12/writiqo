@@ -1,11 +1,7 @@
 import { useState } from "react"
-import Sidebar from './Sidebar.tsx'
-import TextInput from './TextInput.tsx'
-import Ribbon from './Ribbon.tsx'
-
-export const globalData = {
-  activeTool: "type"
-}
+import Sidebar from '../Sidebar.tsx'
+import TextInput from '../TextInput.tsx'
+import Ribbon from '../Ribbon.tsx'
 
 export function delay(delay: number) {
   return new Promise(res => setTimeout(res, delay));
@@ -27,7 +23,6 @@ export default function Editor() {
     return (
         <>
             <Ribbon model={model} setModel={setModel} />
-            {/* <Sidebar model={model} setModel={setModel} /> */}
             <Sidebar/>
             <TextInput model={model} setModel={setModel} />
         </>
