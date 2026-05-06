@@ -1,7 +1,6 @@
 import React, { useRef } from "react"
 // import { globalData } from "./Editor"
 // import Image from "./Image"
-// import { v4 as uuid4 } from "uuid"
 import Paragraph from "./Paragraph"
 
 interface EditorComponentProps {
