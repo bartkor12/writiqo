@@ -102,8 +102,6 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
 
         function removeEmpty() {
 
-            // newModel = filterEmptyLeaf(newModel)
-
             const changedModel: Leaf[] = []
 
             for (let i = 0; i < newModel.length; i++) {
@@ -114,32 +112,20 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                     continue
                 }
 
-                // console.log(leaf.text.startsWith("\n"))
-                // if (leaf.text.startsWith("\n")) {
-                //     const originalLength = leaf.text.length
-                //     leaf.text = leaf.text.replace(/^\n/, "\n\u200B").replace(/(?<=\n\u200B)\u200B+/g, "")
-                //     caretPosition.current -= originalLength - leaf.text.length
-                //     caretPosition.current++
-                //     changedModel.push(leaf)
-                //     continue
-                // }
+                if (leaf.text == "\u200B" && i > 0 && newModel[i - 1]?.styles?.image) {
+                    changedModel.push(leaf)
+                    continue
+                }
 
-                if (leaf.text == "\u200B") {
-                    
-                    if (i > 0 && newModel[i - 1]?.styles?.image) {
-                        changedModel.push(leaf)
-                    }
+                if (newModel[i - 1]?.styles?.image && leaf.text != "\u200B") {
+                    changedModel.push({ text : "\u200B"})
+                    console.warn("herro world")
                     continue
                 }
 
                 leaf.text = leaf.text.replace(/^\u200B+/, "")
 
                 changedModel.push(leaf)
-
-                if (leaf.styles?.image) {
-                    changedModel.push({ text : "\u200B"})
-                }
-
             }
 
             newModel = filterEmptyLeaf(changedModel)
@@ -160,16 +146,6 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
                 }
 
                 if (i > newModel.length) return
-
-                // if (leaf.text.startsWith("\u200B") && !newModel[i - 1].styles?.image) {
-                //     leaf.text = leaf.text.replace(/^\u200B+/, "")
-                // }
-
-                // if (leaf.styles?.image && i + 1 < newModel.length && !newModel[i + 1].text.startsWith("\u200B")) {
-                //     newModel.splice(i, 0, { text: "\u200B" })
-                //     i++
-                //     console.log("new")
-                // }
 
                 if (i > 0 && i < newModel.length - 1) {
                     leaf.text = leaf.text.replace(/^\u2060+/, "")
