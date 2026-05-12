@@ -3,12 +3,6 @@ import type { CSSProperties } from "react";
 export { }
 
 declare global {
-    type Block = {
-        id: string;
-        type: "Paragraph" | "Image";
-        rect?: DOMRect; blockContent?: string;
-        src?: string
-    };
     type Leaf = {
         text : string,
         styles? : {
@@ -31,5 +25,13 @@ declare global {
         | "list",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         advanced?: { property: keyof CSSProperties, value: any, overwrite : boolean } | undefined,
+    };
+    type ExportedModel = {
+        metadata : {
+            name : string,
+            version : number,
+            timestamp : string
+        },
+        model : Leaf[]
     }
 }

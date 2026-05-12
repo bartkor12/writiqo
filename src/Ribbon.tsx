@@ -56,7 +56,16 @@ function Export({model} : {model : Leaf[]}) {
             confirmButtonText : "Enter",
             showLoaderOnConfirm : true,
             preConfirm : async (fileName) => {
-                const blob = new Blob([JSON.stringify(model)], { type: "application/json" })
+                const modelForExport : ExportedModel = {
+                    metadata : {
+                        "name" : fileName,
+                        "version" : 1,
+                        "timestamp" : new Date().toISOString()
+                    },
+                    model : [...model]
+                }
+
+                const blob = new Blob([JSON.stringify(modelForExport)], { type: "application/json" })
                 const href = URL.createObjectURL(blob)
                 const link = document.createElement("a")
                 link.href = href
@@ -104,8 +113,9 @@ function Import({setModel} : {setModel : React.Dispatch<React.SetStateAction<Lea
 
                 if (!content) return
 
-                const importedModel = JSON.parse(content)
-                setModel(importedModel)
+                const importedModel : ExportedModel = JSON.parse(content)
+                if (importedModel.metadata.version != 1) { console.warn("wrong file version, can't import"); return }
+                setModel(importedModel.model)
             }
         }
 
