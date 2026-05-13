@@ -25,6 +25,10 @@ function SaveCard() {
                 <span className="saveName">Document Name</span>
                 <span className="saveSummary">Summary summary summary summary summary summary</span>
             </div>
+            <div className="saveMetadata">
+                <span>2 hours ago</span>
+                <span>1000 words</span>
+            </div>
         </div>
     )
 }

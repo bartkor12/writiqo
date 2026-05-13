@@ -78,7 +78,7 @@
   flex-direction: column;
   height: 100vh;
   width: 100vw;
-  gap: 20vh;
+  gap: 10vh;
 }
 
 .savesTitle {
@@ -109,6 +109,18 @@
 .saveCardImgWrapper img {
   height: 80%;
   width: 80%;
+}
+
+.saveMetadata {
+  display: flex;
+  justify-content: end;
+  margin-right: 100px;
+  align-items: center;
+  height: 100%;
+  color: var(--tool-default);
+  opacity: 70%;
+  gap: 50px;
+  flex: 1;
 }
 
 .saveCard {
