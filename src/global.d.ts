@@ -30,8 +30,9 @@ declare global {
         metadata : {
             name : string,
             version : number,
-            timestamp : string
+            timestamp : string,
+            wordCount : number
         },
-        model : Leaf[]
+        model : string
     }
 }

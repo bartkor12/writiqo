@@ -180,7 +180,7 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         if (e.key === "ArrowRight" && caretPosition.current >= 0) {
             caretPosition.current += 1
         }
-        
+
         const startLeafIndex = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength)
         const leafIndex: number = getLeafIndexFromCaretPosition(caretPosition.current)
         const startLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength, true)

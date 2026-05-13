@@ -4,6 +4,7 @@ import Format from "./Format";
 import { RgbaColorPicker, type RgbaColor } from "react-colorful";
 import Swal from "sweetalert2"
 import LoginButton from "./LoginButton";
+import { compressSync, decompressSync, strFromU8, strToU8 } from "fflate";
 
 function pressFlash(el: HTMLElement) {
     el.classList.remove("press-flash")
@@ -60,9 +61,10 @@ function Export({model} : {model : Leaf[]}) {
                     metadata : {
                         "name" : fileName,
                         "version" : 1,
-                        "timestamp" : new Date().toISOString()
+                        "timestamp" : new Date().toISOString(),
+                        "wordCount" : document.getElementById("textInputDiv")?.textContent.length ?? 0
                     },
-                    model : [...model]
+                    model : strFromU8(compressSync(strToU8(JSON.stringify(model))),true)
                 }
 
                 const blob = new Blob([JSON.stringify(modelForExport)], { type: "application/json" })
@@ -115,7 +117,7 @@ function Import({setModel} : {setModel : React.Dispatch<React.SetStateAction<Lea
 
                 const importedModel : ExportedModel = JSON.parse(content)
                 if (importedModel.metadata.version != 1) { console.warn("wrong file version, can't import"); return }
-                setModel(importedModel.model)
+                setModel(JSON.parse(strFromU8(decompressSync(strToU8(importedModel.model,true)))))
             }
         }
 
@@ -212,8 +214,8 @@ function FontDropdownContainer({ model, setModel }: {
         "Fantasy"
     ];
 
-    function fontDropdownInput(e: React.ChangeEvent<HTMLInputElement>) {
-        const text = e.target.value
+    function fontDropdownInput(e: React.FormEvent<HTMLInputElement>) {
+        const text = e.currentTarget.value
         const fuzzy = createFuzzySearch(defaultFonts)
         setFontsToDisplay(fuzzy(text).map(item => item.item).splice(0, 5))
     }
