@@ -214,7 +214,7 @@ function FontDropdownContainer({ model, setModel }: {
         "Fantasy"
     ];
 
-    function fontDropdownInput(e: React.FormEvent<HTMLInputElement>) {
+    function fontDropdownInput(e: React.SyntheticEvent<HTMLInputElement>) {
         const text = e.currentTarget.value
         const fuzzy = createFuzzySearch(defaultFonts)
         setFontsToDisplay(fuzzy(text).map(item => item.item).splice(0, 5))

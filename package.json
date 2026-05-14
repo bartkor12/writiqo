@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@nozbe/microfuzz": "^1.0.0",
+    "@supabase/supabase-js": "^2.105.4",
     "caret-pos": "^2.0.0",
     "fflate": "^0.8.2",
+    "prop-types": "^15.8.1",
     "react": "^19.2.4",
     "react-avatar": "^5.0.4",
     "react-colorful": "^5.6.1",

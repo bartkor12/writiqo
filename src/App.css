@@ -601,6 +601,7 @@ body {
   height: 120px;
   position: fixed;
   background-color: var(--sidebar);
+  z-index: 99;
   display: flex;
 }
 
@@ -610,7 +611,6 @@ body {
   display: flex;
   flex : 1;
   align-items: center;
-  z-index: 99;
   gap: 15px;
 }
 
@@ -922,7 +922,6 @@ input[type=number] {
   width: 24px;
   outline: none;
   border: none;
-
 }
 
 .formatButton:hover {
