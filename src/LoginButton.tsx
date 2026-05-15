@@ -1,16 +1,22 @@
 import { useNavigate } from "react-router"
 import Avatar from "react-avatar"
 import { supabase } from "./supabase"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 export default function LoginButton() {
     const navigate = useNavigate()
+    const [loggedIn, setLoggedIn] = useState(false)
+    const [email,setEmail] = useState("default")
 
     useEffect(() => {
-        supabase.auth.getSession().then(({data : {session}}) => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
             console.log(session)
+            if (session) {
+                setLoggedIn(true)
+                setEmail(session.user.email ?? "default")
+            }
         })
-    })
+    }, [])
 
     function onClick() {
         navigate("/login")
@@ -19,8 +25,10 @@ export default function LoginButton() {
     return (
         <div id="login" onClick={onClick}>
             <span>Account name</span>
-            <Avatar name="hello" />
-            <img src="account_placeholder.svg" alt="" />
+            {loggedIn ?
+                <Avatar name={email} className="avatarpfp" size="50"/> :
+                <img src="account_placeholder.svg" className="pfp" alt="" />
+            }
         </div>
     )
 }

@@ -19,7 +19,7 @@
 
 .deleteImgButton {
   position: absolute;
-  cursor:pointer;
+  cursor: pointer;
   top: 2px;
   left: 2px;
   width: 30px;
@@ -232,6 +232,7 @@
   font-size: 48px;
   font-weight: 500;
 }
+
 .loginTitleSubtext {
   font-size: 24px;
 }
@@ -244,7 +245,7 @@
   border: var(--body-dull) 2px solid;
   border-radius: 5px;
   width: 100%;
-  cursor:pointer;
+  cursor: pointer;
   background-color: var(--body);
   transition: 200ms;
 }
@@ -316,8 +317,9 @@
   transition: 90ms linear;
   background-color: var(--tool-default);
 }
+
 .menubarButton span {
-  color : var(--body);
+  color: var(--body);
   font-family: Inter Tight;
   font-weight: 600;
   font-size: 25px;
@@ -325,8 +327,8 @@
   opacity: 80%;
 }
 
-.menubarButton:hover  {
-  background-color: var(--tool-hover) ;
+.menubarButton:hover {
+  background-color: var(--tool-hover);
 }
 
 .page {
@@ -416,7 +418,7 @@ body {
 }
 
 .dropdownContent {
-  color : var(--body);
+  color: var(--body);
   background-color: var(--sidebar);
   font-family: Inter Tight;
   min-width: var(--menu-button-width);
@@ -460,11 +462,12 @@ body {
 }
 
 @media print {
-  body > * {
+  body>* {
     visibility: hidden;
   }
 
-  .textInputWrapper, #textInputDiv {
+  .textInputWrapper,
+  #textInputDiv {
     margin: 0 !important;
     padding: 0 !important;
     width: var(--page-width) !important;
@@ -509,8 +512,11 @@ body {
   background-color: var(--sidebar) !important;
 }
 
-.swal2-title, .swal2-confirm, .swal2-cancel, .swal2-input {
-  color : var(--body) !important;
+.swal2-title,
+.swal2-confirm,
+.swal2-cancel,
+.swal2-input {
+  color: var(--body) !important;
   font-family: Inter Tight !important;
   font-weight: 600 !important;
 }
@@ -559,7 +565,7 @@ body {
 
 .textInputWrapper {
   background-color: var(--body) !important;
-  box-shadow: 5px 4px 15px 5px rgba(0,0,0,0.1);
+  box-shadow: 5px 4px 15px 5px rgba(0, 0, 0, 0.1);
   margin-top: 120px;
   width: var(--page-width);
   height: calc(100vh - 160px);
@@ -609,7 +615,7 @@ body {
   padding-left: 150px;
   background-color: var(--sidebar);
   display: flex;
-  flex : 1;
+  flex: 1;
   align-items: center;
   gap: 15px;
 }
@@ -631,18 +637,37 @@ body {
 
 #login span {
   font-family: Inter Tight;
-  color : var(--body);
+  color: var(--body);
   font-size: 24px;
   opacity: 80%;
 }
 
-#login img {
+.pfp {
   background-color: var(--tool-hover);
   border-radius: 50%;
   width: 40px;
   height: 40px;
   border: var(--body) 3px solid;
   padding: 5px;
+}
+
+.avatarpfp {
+  border-radius: 50%;
+    display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.avatarpfp::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 50px;
+  height: 50px;
+  border: var(--body) 3px solid;
+  border-radius: 50%;
 }
 
 @keyframes pressFlash {
@@ -750,12 +775,13 @@ body {
 
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 input[type=number] {
-    -moz-appearance:textfield; /* Firefox */
+  -moz-appearance: textfield;
+  /* Firefox */
 }
 
 .cosmeticSlider {
@@ -803,7 +829,8 @@ input[type=number] {
 
   img:last-child {
     border-bottom-right-radius: 6px;
-  }}
+  }
+}
 
 
 
@@ -928,4 +955,3 @@ input[type=number] {
   background-color: var(--tool-hover);
   scale: 1.05;
 }
-
