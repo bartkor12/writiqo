@@ -5,6 +5,8 @@ import { RgbaColorPicker, type RgbaColor } from "react-colorful";
 import Swal from "sweetalert2"
 import LoginButton from "./LoginButton";
 import { compressSync, decompressSync, strFromU8, strToU8 } from "fflate";
+import { supabase } from "./supabase";
+import { useNavigate } from "react-router";
 
 function pressFlash(el: HTMLElement) {
     el.classList.remove("press-flash")
@@ -46,7 +48,7 @@ function Print() {
     )
 }
 
-function Export({model} : {model : Leaf[]}) {
+function Export({model, cloud} : {model : Leaf[], cloud : boolean}) {
 
     function exportModel() {
 
@@ -57,28 +59,41 @@ function Export({model} : {model : Leaf[]}) {
             confirmButtonText : "Enter",
             showLoaderOnConfirm : true,
             preConfirm : async (fileName) => {
-                const modelForExport : ExportedModel = {
-                    metadata : {
-                        "name" : fileName,
-                        "version" : 1,
-                        "timestamp" : new Date().toISOString(),
-                        "wordCount" : document.getElementById("textInputDiv")?.textContent.length ?? 0
-                    },
-                    model : strFromU8(compressSync(strToU8(JSON.stringify(model))),true)
+                if (fileName.length > 20) {
+                    Swal.showValidationMessage('Name must be 20 characters or less');
+                    return false;
+                }
+                const modelForExport: ExportedModel = {
+                    "name": fileName,
+                    "version": 1,
+                    // "created_at": new Date().toISOString(),
+                    "word_count": document.getElementById("textInputDiv")?.textContent.length ?? 0,
+                    summary : document.getElementById("textInputDiv")?.textContent.slice(0,30) ?? "",
+                    model: btoa(String.fromCharCode(...compressSync(strToU8(JSON.stringify(model)))))
                 }
 
-                const blob = new Blob([JSON.stringify(modelForExport)], { type: "application/json" })
-                const href = URL.createObjectURL(blob)
-                const link = document.createElement("a")
-                link.href = href
+                if (cloud) {
+                    const {data, error} = await supabase
+                    .from("saves")
+                    .insert({
+                        ...modelForExport
+                    })
+                    console.log(data,error)
+                }
+                else {
+                    const blob = new Blob([JSON.stringify(modelForExport)], { type: "application/json" })
+                    const href = URL.createObjectURL(blob)
+                    const link = document.createElement("a")
+                    link.href = href
 
-                link.download = fileName + ".writiqo"
+                    link.download = fileName + ".writiqo"
 
-                document.body.appendChild(link)
-                link.click()
+                    document.body.appendChild(link)
+                    link.click()
 
-                document.body.removeChild(link)
-                URL.revokeObjectURL(href)
+                    document.body.removeChild(link)
+                    URL.revokeObjectURL(href)
+                }
             },
             allowOutsideClick: () => !Swal.isLoading()
         }).then((result) => {
@@ -91,7 +106,7 @@ function Export({model} : {model : Leaf[]}) {
     }   
 
     return (
-        <button onClick={exportModel}>Export</button>
+        <button onClick={exportModel}>{cloud ? "Cloud Save" : "Export"}</button>
     )
 }
 
@@ -116,8 +131,10 @@ function Import({setModel} : {setModel : React.Dispatch<React.SetStateAction<Lea
                 if (!content) return
 
                 const importedModel : ExportedModel = JSON.parse(content)
-                if (importedModel.metadata.version != 1) { console.warn("wrong file version, can't import"); return }
-                setModel(JSON.parse(strFromU8(decompressSync(strToU8(importedModel.model,true)))))
+                if (importedModel.version != 1) { console.warn("wrong file version, can't import"); return }
+                const bytes = Uint8Array.from(atob(importedModel.model), c => c.charCodeAt(0));
+                const original = JSON.parse(strFromU8(decompressSync(bytes)));
+                setModel(original)
             }
         }
 
@@ -130,12 +147,15 @@ function Import({setModel} : {setModel : React.Dispatch<React.SetStateAction<Lea
 }
 
 export default function Ribbon({model,setModel} : RibbonTypes) {
+    const navigate = useNavigate()
     return (<>
         <div id="menubar">
             <Dropdown id="fileDropdown">
                 <Print/>
-                <Export model={model}/>
+                <Export model={model} cloud={false}/>
                 <Import setModel={setModel}/>
+                <Export model={model} cloud={true} />
+                <button onClick={() => navigate("/saves")}>Cloud Open</button>
             </Dropdown>
         </div>
         <div id="ribbonWrapper">

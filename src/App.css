@@ -138,6 +138,39 @@
   font-family: Inter Tight;
   box-shadow: -2px 2px 9px 0px #000000;
   border: 3px var(--body-dull) solid;
+  position: relative;
+}
+
+.saveDropdown {
+  display: flex;
+  flex-direction: column;
+  font-size: 24px;
+  text-align: center;
+  position: absolute;
+  top: 5px;
+  right: 40px;
+  color: var(--tool-active);
+  width: 150px;
+}
+
+.saveDropdown span {
+  padding-bottom: 5px;
+  padding-top: 5px;
+  background-color: var(--tool-default);
+}
+.saveDropdown span:hover {
+  filter: invert();
+}
+
+.saveMenu {
+  background-color: var(--tool-default);
+  border-radius: 5px;
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  top: 5px;
+  cursor: context-menu;
+  right: 5px;
 }
 
 .saveText {
@@ -151,6 +184,7 @@
 
 .saveSummary {
   font-size: 16px;
+  opacity: 85%;
 }
 
 .formInputDiv input:focus {
@@ -633,6 +667,10 @@ body {
   gap: 20px;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
+}
+#login > * {
+  user-select: none;
 }
 
 #login span {

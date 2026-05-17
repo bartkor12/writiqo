@@ -24,15 +24,14 @@ declare global {
         style: "italic" | "underline" | "bold" | "none" | "strikethrough" | "overline" 
         | "list",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        advanced?: { property: keyof CSSProperties, value: any, overwrite : boolean } | undefined,
+        advanced?: { property: keyof CSSProperties, value: any, overwrite: boolean } | undefined,
     };
     type ExportedModel = {
-        metadata : {
-            name : string,
-            version : number,
-            timestamp : string,
-            wordCount : number
-        },
-        model : string
+        name: string,
+        version: number,
+        created_at?: string,
+        word_count: number
+        model: string,
+        summary : string
     }
 }

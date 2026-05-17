@@ -10,7 +10,6 @@ export default function LoginButton() {
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
-            console.log(session)
             if (session) {
                 setLoggedIn(true)
                 setEmail(session.user.email ?? "default")
@@ -19,12 +18,12 @@ export default function LoginButton() {
     }, [])
 
     function onClick() {
-        navigate("/login")
+        if (!loggedIn) navigate("/login")
     }
 
     return (
         <div id="login" onClick={onClick}>
-            <span>Account name</span>
+            <span>{loggedIn ? email.split("@")[0] : "Account name"}</span>
             {loggedIn ?
                 <Avatar name={email} className="avatarpfp" size="50"/> :
                 <img src="account_placeholder.svg" className="pfp" alt="" />
