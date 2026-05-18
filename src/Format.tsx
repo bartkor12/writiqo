@@ -1,6 +1,7 @@
 import { position as CaretPosition } from "caret-pos"
 import type { CSSProperties } from "react"
-import { filterEmptyLeaf } from "./pages/Editor"
+import { filterEmptyLeaf } from "./utils/general"
+import { modelStore } from "./utils/stores"
 
 let savedSelection: { length: number, end: number, id : string } = { length: 0, end: 0, id : "" }
 
@@ -22,7 +23,9 @@ function getEditableContentDiv() {
     return node
 }
 
-export default function Format({ model, setModel, style, advanced = undefined }: FormatTypes) {
+export default function Format({ style, advanced = undefined }: FormatTypes) {
+    const model = modelStore(s => s.model)
+    const setModel = modelStore(s => s.setModel)
 
     const editableContentDiv = getEditableContentDiv()
     if (!editableContentDiv) return

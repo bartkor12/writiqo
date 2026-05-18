@@ -1,14 +1,12 @@
 import React, { useCallback, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react"
 import { position as CaretPosition } from "caret-pos"
 import Format from "./Format"
-import { filterEmptyLeaf } from "./pages/Editor"
+import { filterEmptyLeaf } from "./utils/general"
+import { modelStore } from "./utils/stores"
 
-interface EditorComponentProps {
-    model: Leaf[],
-    setModel: React.Dispatch<React.SetStateAction<Leaf[]>>
-}
-
-export default function Paragraph({ model, setModel }: EditorComponentProps) {
+export default function Paragraph() {
+    const model = modelStore(s => s.model)
+    const setModel = modelStore(s => s.setModel)
     const thisTextArea = useRef<HTMLDivElement>(null)
     const caretPosition = useRef<number>(0)
     const undoModel = useRef<Array<Leaf[]>>([])
@@ -157,8 +155,6 @@ export default function Paragraph({ model, setModel }: EditorComponentProps) {
         if (e.ctrlKey && style) {
             e.preventDefault()
             Format({
-                model,
-                setModel,
                 style
             })
 

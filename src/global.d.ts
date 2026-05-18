@@ -19,8 +19,6 @@ declare global {
         id? : string
     };
     interface FormatTypes {
-        model: Leaf[],
-        setModel: React.Dispatch<React.SetStateAction<Leaf[]>>,
         style: "italic" | "underline" | "bold" | "none" | "strikethrough" | "overline" 
         | "list",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

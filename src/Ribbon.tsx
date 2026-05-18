@@ -4,9 +4,10 @@ import Format from "./Format";
 import { RgbaColorPicker, type RgbaColor } from "react-colorful";
 import Swal from "sweetalert2"
 import LoginButton from "./LoginButton";
-import { compressSync, decompressSync, strFromU8, strToU8 } from "fflate";
 import { supabase } from "./supabase";
 import { useNavigate } from "react-router";
+import { compressModel, decompressModel } from "./utils/general";
+import { authStore } from "./utils/stores";
 
 function pressFlash(el: HTMLElement) {
     el.classList.remove("press-flash")
@@ -14,12 +15,7 @@ function pressFlash(el: HTMLElement) {
     el.classList.add("press-flash")
 }
 
-interface RibbonTypes {
-    model: Leaf[],
-    setModel: React.Dispatch<React.SetStateAction<Leaf[]>>
-}
-
-function Dropdown({children, id} : {children : ReactNode, id : string}) {
+function Dropdown({ children, id }: { children: ReactNode, id: string }) {
     let dropdownClicked = false
     const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -48,17 +44,24 @@ function Print() {
     )
 }
 
-function Export({model, cloud} : {model : Leaf[], cloud : boolean}) {
+function Export({ cloud }: { cloud: boolean }) {
+    const isLoggedIn = authStore(s => s.isLoggedIn)
+    const navigate = useNavigate()
 
     function exportModel() {
+
+        if (cloud && !isLoggedIn) {
+            navigate("/login")
+            return
+        }
 
         Swal.fire({
             title: "File name",
             input: "text",
-            showCancelButton : true,
-            confirmButtonText : "Enter",
-            showLoaderOnConfirm : true,
-            preConfirm : async (fileName) => {
+            showCancelButton: true,
+            confirmButtonText: "Enter",
+            showLoaderOnConfirm: true,
+            preConfirm: async (fileName) => {
                 if (fileName.length > 20) {
                     Swal.showValidationMessage('Name must be 20 characters or less');
                     return false;
@@ -66,19 +69,22 @@ function Export({model, cloud} : {model : Leaf[], cloud : boolean}) {
                 const modelForExport: ExportedModel = {
                     "name": fileName,
                     "version": 1,
-                    // "created_at": new Date().toISOString(),
                     "word_count": document.getElementById("textInputDiv")?.textContent.length ?? 0,
-                    summary : document.getElementById("textInputDiv")?.textContent.slice(0,30) ?? "",
-                    model: btoa(String.fromCharCode(...compressSync(strToU8(JSON.stringify(model)))))
+                    summary: document.getElementById("textInputDiv")?.textContent.slice(0, 30) ?? "",
+                    model: compressModel()
                 }
 
                 if (cloud) {
-                    const {data, error} = await supabase
-                    .from("saves")
-                    .insert({
-                        ...modelForExport
-                    })
-                    console.log(data,error)
+                    const { error } = await supabase
+                        .from("saves")
+                        .insert({
+                            ...modelForExport
+                        })
+                    // if (error) throw new Error(error.message)
+                    if (error) {
+                        Swal.showValidationMessage('Name must be 20 characters or less');
+                        return false;
+                    }
                 }
                 else {
                     const blob = new Blob([JSON.stringify(modelForExport)], { type: "application/json" })
@@ -103,17 +109,29 @@ function Export({model, cloud} : {model : Leaf[], cloud : boolean}) {
                 iconColor: "#a5b4fc"
             })
         })
-    }   
+    }
 
     return (
         <button onClick={exportModel}>{cloud ? "Cloud Save" : "Export"}</button>
     )
 }
 
-function Import({setModel} : {setModel : React.Dispatch<React.SetStateAction<Leaf[]>>}) {
+function Import({ cloud }: { cloud: boolean }) {
+    const isLoggedIn = authStore(s => s.isLoggedIn)
+    const navigate = useNavigate()
 
     function importModel() {
-        const fileInput : HTMLInputElement = document.createElement("input")
+
+        if (cloud && !isLoggedIn) {
+            navigate("/login")
+            return
+        }
+        if (cloud) {
+            navigate("/saves")
+            return
+        }
+
+        const fileInput: HTMLInputElement = document.createElement("input")
         fileInput.type = "file"
 
         fileInput.onchange = () => {
@@ -130,11 +148,9 @@ function Import({setModel} : {setModel : React.Dispatch<React.SetStateAction<Lea
 
                 if (!content) return
 
-                const importedModel : ExportedModel = JSON.parse(content)
-                if (importedModel.version != 1) { console.warn("wrong file version, can't import"); return }
-                const bytes = Uint8Array.from(atob(importedModel.model), c => c.charCodeAt(0));
-                const original = JSON.parse(strFromU8(decompressSync(bytes)));
-                setModel(original)
+                const importedModel: ExportedModel = JSON.parse(content)
+
+                decompressModel(importedModel.model, importedModel.version)
             }
         }
 
@@ -142,20 +158,19 @@ function Import({setModel} : {setModel : React.Dispatch<React.SetStateAction<Lea
     }
 
     return (
-        <button onClick={importModel}>Import</button>
+        <button onClick={importModel}>{cloud ? "Cloud Open" : "Import"}</button>
     )
 }
 
-export default function Ribbon({model,setModel} : RibbonTypes) {
-    const navigate = useNavigate()
+export default function Ribbon() {
     return (<>
         <div id="menubar">
             <Dropdown id="fileDropdown">
-                <Print/>
-                <Export model={model} cloud={false}/>
-                <Import setModel={setModel}/>
-                <Export model={model} cloud={true} />
-                <button onClick={() => navigate("/saves")}>Cloud Open</button>
+                <Print />
+                <Export cloud={false} />
+                <Import cloud={false} />
+                <Export cloud={true} />
+                <Import cloud={true} />
             </Dropdown>
         </div>
         <div id="ribbonWrapper">
@@ -163,33 +178,33 @@ export default function Ribbon({model,setModel} : RibbonTypes) {
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     <span className="descriptor">Text Modifications</span>
                     <div style={{ display: "flex", gap: 5 }}>
-                        <ColorPickerButton src={"format_color_text.svg"} style="color" model={model} setModel={setModel} />
+                        <ColorPickerButton src={"format_color_text.svg"} style="color" />
                         <div className="formatContainer formatButtonContainer">
-                            <FormatButton model={model} setModel={setModel} style="bold" />
-                            <FormatButton model={model} setModel={setModel} style="strikethrough" />
-                            <FormatButton model={model} setModel={setModel} style="overline" />
-                            <FormatButton model={model} setModel={setModel} style="underline" />
+                            <FormatButton style="bold" />
+                            <FormatButton style="strikethrough" />
+                            <FormatButton style="overline" />
+                            <FormatButton style="underline" />
                         </div>
                     </div>
                     <div style={{ display: "flex", gap: 5 }}>
-                        <ColorPickerButton src={"format_color_fill.svg"} style="backgroundColor" model={model} setModel={setModel} />
-                        <FormatSlider model={model} setModel={setModel} style="letterSpacing" type="horizontal" unit="%" min={0} max={100} sensitivity={1} />
+                        <ColorPickerButton src={"format_color_fill.svg"} style="backgroundColor" />
+                        <FormatSlider style="letterSpacing" type="horizontal" unit="%" min={0} max={100} sensitivity={1} />
                         <div className="formatContainer formatButtonContainer">
-                            <FormatButton model={model} setModel={setModel} style="list" />
+                            <FormatButton style="list" />
                         </div>
                     </div>
                 </div>
                 <div className="ribbonSpacer" />
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     <span className="descriptor">Font Options</span>
-                    <FontDropdownContainer model={model} setModel={setModel} />
+                    <FontDropdownContainer />
                     <div style={{ display: "flex", gap: 18 }}>
-                        <FormatSlider model={model} setModel={setModel} style="fontSize" type="vertical" unit="px" min={0} max={150} sensitivity={1} />
+                        <FormatSlider style="fontSize" type="vertical" unit="px" min={0} max={150} sensitivity={1} />
                         <div className="formatContainer formatButtonContainer">
-                            <FormatButton model={model} setModel={setModel} style="none" advanced={{ property: "textAlign", value: "left", overwrite: true }} />
-                            <FormatButton model={model} setModel={setModel} style="none" advanced={{ property: "textAlign", value: "right", overwrite: true }} />
-                            <FormatButton model={model} setModel={setModel} style="none" advanced={{ property: "textAlign", value: "justify", overwrite: true }} />
-                            <FormatButton model={model} setModel={setModel} style="none" advanced={{ property: "textAlign", value: "center", overwrite: true }} />
+                            <FormatButton style="none" advanced={{ property: "textAlign", value: "left", overwrite: true }} />
+                            <FormatButton style="none" advanced={{ property: "textAlign", value: "right", overwrite: true }} />
+                            <FormatButton style="none" advanced={{ property: "textAlign", value: "justify", overwrite: true }} />
+                            <FormatButton style="none" advanced={{ property: "textAlign", value: "center", overwrite: true }} />
                         </div>
                     </div>
                 </div>
@@ -202,10 +217,7 @@ export default function Ribbon({model,setModel} : RibbonTypes) {
     )
 }
 
-function FontDropdownContainer({ model, setModel }: {
-    model: Leaf[],
-    setModel: React.Dispatch<React.SetStateAction<Leaf[]>>,
-}) {
+function FontDropdownContainer() {
     const [fontsToDisplay, setFontsToDisplay] = useState<string[]>()
     const fontInputRef = useRef<HTMLInputElement>(null)
     const chosenFontText = useRef<string>("")
@@ -257,8 +269,6 @@ function FontDropdownContainer({ model, setModel }: {
 
     function fontDropdownClick(e: React.MouseEvent<HTMLButtonElement>) {
         Format({
-            model,
-            setModel,
             style: "none",
             advanced: { property: "fontFamily", value: chosenFontText.current, overwrite: true }
         })
@@ -284,31 +294,27 @@ function FontDropdownContainer({ model, setModel }: {
     )
 }
 
-function ColorPickerButton({ src, model, setModel, style }: {
+function ColorPickerButton({ src, style }: {
     src: string,
-    model: Leaf[],
-    setModel: React.Dispatch<React.SetStateAction<Leaf[]>>,
-    style : keyof CSSProperties
+    style: keyof CSSProperties
 }) {
     const [showPicker, setShowPicker] = useState<boolean>(false)
     const [coordinates, setCoordinates] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
     const [color, setColor] = useState<RgbaColor>({ r: 165, g: 180, b: 252, a: 1 })
     const colorPicker = useRef<HTMLDivElement>(null)
 
-    function onMouseDown(e : React.MouseEvent<HTMLDivElement, MouseEvent>) {
+    function onMouseDown(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
         e.stopPropagation()
         setShowPicker(true)
         setCoordinates({ x: e.clientX, y: e.clientY })
     }
 
-    function onChange(newColor : RgbaColor) {
+    function onChange(newColor: RgbaColor) {
         setColor(newColor)
 
         Format({
-            model,
-            setModel,
-            style : "none",
-            advanced : {"property" : style, "value" : `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`, overwrite : true},
+            style: "none",
+            advanced: { "property": style, "value": `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`, overwrite: true },
         })
     }
 
@@ -326,7 +332,7 @@ function ColorPickerButton({ src, model, setModel, style }: {
     }, [])
 
     return (
-        <div style={{display : "flex"}} className="colorPicker">
+        <div style={{ display: "flex" }} className="colorPicker">
             <img src={src} alt="" onClick={() => onChange(color)} />
             <div className="colorPickerColor" style={{ backgroundColor: `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})` }} onMouseDown={onMouseDown}></div>
             {showPicker && (
@@ -338,13 +344,11 @@ function ColorPickerButton({ src, model, setModel, style }: {
     )
 }
 
-function FormatButton({model,setModel,style,advanced} : FormatTypes) {
+function FormatButton({ style, advanced }: FormatTypes) {
     const name = style == "none" ? "align_" + advanced!.value : style
 
     function onClick() {
         Format({
-            model,
-            setModel,
             style,
             advanced
         })
@@ -357,37 +361,31 @@ function FormatButton({model,setModel,style,advanced} : FormatTypes) {
     )
 }
 
-function FormatSlider({model,setModel,style,type,unit,min,max,sensitivity} : {
-    model: Leaf[],
-    setModel: React.Dispatch<React.SetStateAction<Leaf[]>>,
-    style : keyof CSSProperties,
-    type : "horizontal" | "vertical",
-    unit : "%" | "px",
-    min : number,
-    max : number,
-    sensitivity : number
+function FormatSlider({ style, type, unit, min, max, sensitivity }: {
+    style: keyof CSSProperties,
+    type: "horizontal" | "vertical",
+    unit: "%" | "px",
+    min: number,
+    max: number,
+    sensitivity: number
 }) {
-    const [value,setValue] = useState<number>(0)
+    const [value, setValue] = useState<number>(0)
     const dragging = useRef<boolean>(false)
     const sliderStart = useRef<number>(0)
     const prevSliderPosition = useRef<number>(0)
     const sliderIncrementSpeed = useRef<number>(0)
 
-    function onClick() {        
+    function onClick() {
         Format({
-            model,
-            setModel,
-            style : "none",
+            style: "none",
             advanced: { "property": style, value, "overwrite": true }
         })
     }
 
-    function updateValue(newValue : number) {
-        setValue(Math.max(min,Math.min(newValue,max)))
+    function updateValue(newValue: number) {
+        setValue(Math.max(min, Math.min(newValue, max)))
 
         Format({
-            model,
-            setModel,
             style: "none",
             advanced: { "property": style, value, "overwrite": true },
         })
@@ -423,7 +421,7 @@ function FormatSlider({model,setModel,style,type,unit,min,max,sensitivity} : {
             }
             <input type="number" value={value}
                 onInput={e => updateValue(Number(e.currentTarget.value))}
-                onMouseDown={e => {dragging.current = true; sliderStart.current = e.clientX; updateValue(value) }} //; animateSlider(1)
+                onMouseDown={e => { dragging.current = true; sliderStart.current = e.clientX; updateValue(value) }} //; animateSlider(1)
                 onMouseUp={e => { dragging.current = false; e.currentTarget.readOnly = false }} //; animateSlider(0)
                 onMouseLeave={e => { dragging.current = false; e.currentTarget.readOnly = false }} //; animateSlider(0)
                 onMouseMove={fontSizeMouseMove}

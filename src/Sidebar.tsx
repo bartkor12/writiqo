@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import './App.css'
-import {delay} from './pages/Editor.tsx'
+import {delay} from './utils/general'
 import { LazySvg } from './lazy-svg.tsx'
 // ? drawing could be possible future feature, for now releasing and maintaining the website is more important
 const tools = [

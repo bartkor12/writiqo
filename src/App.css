@@ -91,9 +91,155 @@
 .saves {
   display: flex;
   width: 50vw;
-  height: auto;
+  height: 60vh;
   flex-direction: column;
   gap: 10px;
+
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+
+  padding-right: 40px;
+  padding-left: 40px;
+  padding-bottom: 40px;
+}
+
+/* Root container matches .saveCard exactly */
+.sc_load_root {
+  height: 80px;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: var(--body);
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: -2px 2px 9px 0px #000000;
+  border: 3px var(--body-dull) solid;
+  cursor: default;
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+/* Shared skeleton style */
+.skeleton {
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--body) 0%,
+    #e0e0e0 50%,
+    var(--body) 100%
+  );
+  background-size: 400px 80px;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Image wrapper skeleton matches .saveCardImgWrapper */
+.sc_load_imgWrap {
+  height: 80px;
+  width: 80px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.sc_load_imgSkeleton {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    var(--body) 0%,
+    #e0e0e0 50%,
+    var(--body) 100%
+  );
+  background-size: 400px 80px;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Text block skeleton matches .saveText */
+.sc_load_textBlock {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  gap: 5px;
+}
+
+.sc_load_nameSkeleton {
+  width: 200px;
+  height: 32px;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--body) 0%,
+    #e0e0e0 50%,
+    var(--body) 100%
+  );
+  background-size: 400px 32px;
+  animation: shimmer 1.5s infinite linear;
+}
+
+.sc_load_summarySkeleton {
+  width: 150px;
+  height: 16px;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--body) 0%,
+    #e0e0e0 50%,
+    var(--body) 100%
+  );
+  background-size: 400px 16px;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Metadata skeleton matches .saveMetadata */
+.sc_load_metaBlock {
+  display: flex;
+  gap: 50px;
+  align-items: center;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.sc_load_metaSkeletonA,
+.sc_load_metaSkeletonB {
+  width: 80px;
+  height: 16px;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--body) 0%,
+    #e0e0e0 50%,
+    var(--body) 100%
+  );
+  background-size: 400px 16px;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Menu skeleton matches .saveMenu */
+.sc_load_menuSkeleton {
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--body) 0%,
+    #e0e0e0 50%,
+    var(--body) 100%
+  );
+  background-size: 400px 30px;
+  animation: shimmer 1.5s infinite linear;
 }
 
 .saveCardImgWrapper {
@@ -121,6 +267,7 @@
   opacity: 70%;
   gap: 50px;
   flex: 1;
+  cursor: default;
 }
 
 .saveCard {
@@ -139,6 +286,10 @@
   box-shadow: -2px 2px 9px 0px #000000;
   border: 3px var(--body-dull) solid;
   position: relative;
+}
+
+.saveText:hover .saveName {
+  text-decoration-line : underline;
 }
 
 .saveDropdown {
