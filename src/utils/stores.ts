@@ -8,12 +8,13 @@ type ModelStore = {
 
 export const modelStore = create<ModelStore>((set) => ({
     model: [
-        { "text": "aaaa" },
-        { "text": "bbbb" },
-        { "text": "cccccccc", styles: { bold: true, italic: true } },
-        { "text": "dddd", styles: { italic: true } },
-        { "text": "eeee" }
-    ],
+    { "text": "\u2060\u2060" },
+    { "text": "aaaa" },
+    { "text": "bbbb" },
+    { "text": "cccccccc", styles: { bold: true, italic: true } },
+    { "text": "dddd", styles: { italic: true } },
+    { "text": "eeee" }
+  ],
     setModel : (model) => set({model})
 }))
 

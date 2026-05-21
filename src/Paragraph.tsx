@@ -42,8 +42,8 @@ export default function Paragraph() {
         caretPosition.current = CaretPosition(thisTextArea.current!).pos
 
         const input = e.data
-        let caretOffset = getLeafIndexFromCaretPosition(caretPosition.current, true)
-        let leafIndex: number = getLeafIndexFromCaretPosition(caretPosition.current)
+        const caretOffset = getLeafIndexFromCaretPosition(caretPosition.current, true)
+        const leafIndex: number = getLeafIndexFromCaretPosition(caretPosition.current)
 
         const text = model[leafIndex].text
 
@@ -286,18 +286,36 @@ export default function Paragraph() {
                 caretPosition.current -= 1
             }
             else if (e.ctrlKey && e.key.toLowerCase() === "z") {
-                updateUndoModel(newModel)
+                e.preventDefault()
 
                 if (e.shiftKey) {
-                    console.log("redo", undoModel)
+                    // redo
                     undoIndex.current = Math.max(undoIndex.current - 1, 0)
+                } else {
+                    if (undoIndex.current === 0) {
+                        if (JSON.stringify(undoModel.current.at(-1)) !== JSON.stringify(newModel)) {
+                            undoModel.current.push(makeNewModel())
+                            undoCaretPositions.current.push(CaretPosition(thisTextArea.current!).pos)
+
+                            if (undoModel.current.length > maxUndo) {
+                                undoModel.current.shift()
+                                undoCaretPositions.current.shift()
+                            }
+                        }
+                    }
+                    undoIndex.current = Math.min(undoIndex.current + 1, undoModel.current.length - 1)
                 }
-                else {
-                    console.log("undo", undoModel)
-                    undoIndex.current = Math.min(undoIndex.current + 1, undoModel.current.length)
-                }
-                caretPosition.current = undoCaretPositions.current[undoModel.current.length - undoIndex.current] ?? caretPosition.current
-                newModel = undoModel.current[undoModel.current.length - undoIndex.current] ?? newModel;
+
+                const targetIndex = undoModel.current.length - 1 - undoIndex.current
+
+                const targetPos = undoCaretPositions.current[targetIndex] ?? CaretPosition(thisTextArea.current!).pos
+
+                caretPosition.current = targetPos > 0 ? targetPos - 1 : 0
+
+                newModel = undoModel.current[targetIndex] ?? newModel
+
+                setModel(newModel)
+                return
             }
             else if (e.key === "Enter") {
                 const styles = newModel[leafIndex].styles
@@ -317,41 +335,43 @@ export default function Paragraph() {
     }
 
     function keyDown(e: React.KeyboardEvent) {
-        if (Date.now() - lastTyped.current > 300) {
-            if (!updateUndoModel(model)) {
-                if (model != undoModel.current.at(-(undoIndex.current))) {
-                    console.log(undoModel, undoIndex)
-                    console.log("resetting")
-                    undoModel.current = undoModel.current.slice(0, undoModel.current.length - undoIndex.current)
-                    undoCaretPositions.current = undoCaretPositions.current.slice(0, undoCaretPositions.current.length - undoIndex.current)
-                    undoIndex.current = 0
-                }
+        const isUndoRedo = e.ctrlKey && e.key.toLowerCase() === 'z'
+
+        const isModifier = ["Control", "Shift", "Alt", "Meta", "CapsLock"].includes(e.key)
+
+        if (!isUndoRedo && !isModifier) {
+            if (undoIndex.current > 0) {
+                undoModel.current = undoModel.current.slice(0, undoModel.current.length - undoIndex.current)
+                undoCaretPositions.current = undoCaretPositions.current.slice(0, undoCaretPositions.current.length - undoIndex.current)
+                undoIndex.current = 0
             }
+            updateUndoModel(model)
         }
-        
+
         lastTyped.current = Date.now()
-
         caretPosition.current = CaretPosition(thisTextArea.current!).pos
-
         formatSelection(e)
     }
 
-    function updateUndoModel(newModel: Leaf[]) {
-        if (undoIndex.current == 0) {
-            if (JSON.stringify(undoModel.current.at(-1)) != JSON.stringify(newModel)) {
-                undoModel.current.push(makeNewModel())
-                undoCaretPositions.current.push(caretPosition.current)
-            }
-            if (undoModel.current.length > maxUndo) undoModel.current.shift()
+function updateUndoModel(newModel: Leaf[]) {
+    if (undoIndex.current == 0) {
+        if (JSON.stringify(undoModel.current.at(-1)) != JSON.stringify(newModel)) {
+            undoModel.current.push(makeNewModel())
+            // STRATEGY: Trust your internal ref tracking here
+            undoCaretPositions.current.push(caretPosition.current) 
         }
-        return undoIndex.current == 0
+        if (undoModel.current.length > maxUndo) {
+            undoModel.current.shift()
+            undoCaretPositions.current.shift() // Keep this! It fixes the desync.
+        }
     }
+    return undoIndex.current == 0
+}
 
     useLayoutEffect(() => {
         if (caretPosition.current == 0) caretPosition.current = 1
         CaretPosition(thisTextArea.current!, caretPosition.current + 1)
-        console.warn(caretPosition.current, undoModel)
-    }, [])
+    }, [model])
 
     const groupedModel = []
     let textGroup: Leaf[] = []
