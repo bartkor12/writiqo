@@ -23,13 +23,13 @@ export default function Paragraph() {
             const leaf = model[index];
 
             if (getOffset && stringLength + leaf.text.length > caretPosition) {
-                return caretPosition - stringLength + 1
+                return index == 0 ? 0 : caretPosition - stringLength + 1
             }
 
             stringLength += leaf.text.length
 
             if (stringLength > caretPosition) {
-                return index
+                return index == 0 ? 1 : index
             }
         };
 
@@ -42,13 +42,12 @@ export default function Paragraph() {
         caretPosition.current = CaretPosition(thisTextArea.current!).pos
 
         const input = e.data
-        const caretOffset = window.getSelection()?.focusOffset
-        const leafIndex: number = getLeafIndexFromCaretPosition(caretPosition.current)
+        let caretOffset = getLeafIndexFromCaretPosition(caretPosition.current, true)
+        let leafIndex: number = getLeafIndexFromCaretPosition(caretPosition.current)
 
         const text = model[leafIndex].text
 
         const newText = text.slice(0, caretOffset) + input + text.slice(caretOffset, text.length)
-
         const newModel: Leaf[] = makeNewModel()
         newModel[leafIndex].text = newText
         setModel(newModel)
@@ -95,6 +94,9 @@ export default function Paragraph() {
                     break
             }
         }
+        else {
+            if (e.key == "Wakeup") e.preventDefault()
+        }
 
         let newModel: Leaf[] = makeNewModel()
 
@@ -116,7 +118,7 @@ export default function Paragraph() {
                 }
 
                 if (newModel[i - 1]?.styles?.image && leaf.text != "\u200B") {
-                    changedModel.push({ text : "\u200B"})
+                    changedModel.push({ text: "\u200B" })
                     console.warn("herro world")
                     continue
                 }
@@ -177,14 +179,40 @@ export default function Paragraph() {
             caretPosition.current += 1
         }
 
+        let leafIndex = getLeafIndexFromCaretPosition(caretPosition.current)
+        let startLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength, true)
+
+        if (!newModel[0] || newModel[0].text != "\u2060\u2060") {
+            newModel.unshift({ text: '\u2060\u2060' })
+            removeEmpty()
+            caretPosition.current += 2
+            console.warn("bruh")
+        }
+
+        if (newModel[newModel.length - 1].text != "\u2060\u2060") {
+            newModel.splice(newModel.length, 0, { text: '\u2060\u2060' })
+            removeEmpty()
+            // caretPosition.current -= 2
+        }
+
+        if (newModel[leafIndex]?.text == "\u2060\u2060") {
+            if (leafIndex > 0) {
+                caretPosition.current -= startLeafOffset
+            }
+            else {
+                caretPosition.current += startLeafOffset - 2 < 0 ? 0 : startLeafOffset - 2
+            }
+            console.warn("ayooooo")
+        }
+
+        leafIndex = getLeafIndexFromCaretPosition(caretPosition.current)
+        startLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength, true)
         const startLeafIndex = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength)
-        const leafIndex: number = getLeafIndexFromCaretPosition(caretPosition.current)
-        const startLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current - selectionLength, true)
         const endLeafOffset = getLeafIndexFromCaretPosition(caretPosition.current, true)
-        
+
         if (e.key === "Home") {
             e.preventDefault()
-            const textToStartLine = newModel.slice(0,leafIndex+1).map(el => el.text).join("").split("\n\u200B")
+            const textToStartLine = newModel.slice(0, leafIndex + 1).map(el => el.text).join("").split("\n\u200B")
             textToStartLine.pop()
             const lengthToStartLine = textToStartLine.join("").length + textToStartLine.length * 2
 
@@ -194,32 +222,8 @@ export default function Paragraph() {
 
             caretPosition.current = caretToStart
         }
+
         // erase and delete
-        console.log("input")
-
-        // function activateTextAlign(style: string) {
-        //     newModel[leafIndex].styles ??= {}
-        //     newModel[leafIndex].styles.advanced ??= {}
-        //     if (newModel[leafIndex].styles.advanced.textAlign == undefined) newModel[leafIndex].styles.advanced.textAlign = "left"
-
-        //     if (newModel[leafIndex].styles.advanced.textAlign == style) {
-        //         document.getElementById("align_center")!.classList.remove("activated")
-        //         document.getElementById("align_right")!.classList.remove("activated")
-        //         document.getElementById("align_left")!.classList.remove("activated")
-        //         document.getElementById("align_justify")!.classList.remove("activated")
-
-        //         document.getElementById("align_" + style)!.classList.add("activated")
-        //     }
-        // }
-
-        // activateTextAlign("center")
-        // activateTextAlign("left")
-        // activateTextAlign("right")
-        // activateTextAlign("justify")
-
-        console.log(newModel)
-
-        console.log(startLeafOffset,e.key)
         caretPosition.current += newModel[startLeafIndex].text[startLeafOffset] == "\u200B" && newModel[startLeafIndex]?.text[startLeafOffset - 1] == "\n" ? 1 : 0
 
         if (e.ctrlKey && e.key === "c" && !window.getSelection()?.isCollapsed) {
@@ -308,22 +312,24 @@ export default function Paragraph() {
             }
         } // deletes \u200B\n on the same line
 
-        if (!newModel[0] || !newModel[0].text.startsWith("\u2060")) {
-            newModel.splice(0, 0, { text: '\u2060\u2060' })
-            removeEmpty()
-            caretPosition.current += 4
-        }
-        if (!(newModel[newModel.length - 1].text == "\u2060\u2060")) {
-            newModel.splice(newModel.length, 0, { text: '\u2060\u2060' })
-            removeEmpty()
-            caretPosition.current -= 1
-        }
-
         setModel(newModel)
         caretPosition.current = caretPosition.current - (selectionLength + 1) > 0 ? caretPosition.current - (selectionLength + 1) : 0
     }
 
     function keyDown(e: React.KeyboardEvent) {
+        if (Date.now() - lastTyped.current > 300) {
+            if (!updateUndoModel(model)) {
+                if (model != undoModel.current.at(-(undoIndex.current))) {
+                    console.log(undoModel, undoIndex)
+                    console.log("resetting")
+                    undoModel.current = undoModel.current.slice(0, undoModel.current.length - undoIndex.current)
+                    undoCaretPositions.current = undoCaretPositions.current.slice(0, undoCaretPositions.current.length - undoIndex.current)
+                    undoIndex.current = 0
+                }
+            }
+        }
+        
+        lastTyped.current = Date.now()
 
         caretPosition.current = CaretPosition(thisTextArea.current!).pos
 
@@ -344,81 +350,8 @@ export default function Paragraph() {
     useLayoutEffect(() => {
         if (caretPosition.current == 0) caretPosition.current = 1
         CaretPosition(thisTextArea.current!, caretPosition.current + 1)
-        console.log(caretPosition.current, undoModel)
-
-        if (Date.now() - lastTyped.current > 300) {
-            if (!updateUndoModel(model)) {
-                if (model != undoModel.current.at(-(undoIndex.current))) {
-                    console.log(undoModel, undoIndex)
-                    console.log("resetting")
-                    undoModel.current = undoModel.current.slice(0, undoModel.current.length - undoIndex.current)
-                    undoCaretPositions.current = undoCaretPositions.current.slice(0, undoCaretPositions.current.length - undoIndex.current)
-                    undoIndex.current = 0
-                }
-            }
-        }
-        lastTyped.current = Date.now()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [model])
-
-    // function paginate() {
-    //     if (!thisTextArea.current) return
-
-    //     const flatDomRepresentation = Array.from(thisTextArea.current.querySelectorAll("*")).filter(item => item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE)
-
-    //     let totalHeight = 0
-    //     let prevSpanY = 0
-    //     let prevLeaf : Leaf | undefined
-    //     let similar : Leaf[] = []
-    //     let nextPage = 0
-
-    //     const pagedModel : Array<Array<{type : string, children : Leaf[]}>> = []
-
-    //     for (let i = 0; i < flatDomRepresentation.length; i++) {
-    //         const span = flatDomRepresentation[i];
-    //         const spanRect = span.getBoundingClientRect()
-    //         const spanHeight = spanRect.height
-    //         const spanY = spanRect.y
-    //         const leaf = model[i]
-    //         const page = Math.floor((totalHeight + spanHeight) / 1122)
-
-    //         if (leaf) {
-    //             leaf.styles ??= {}
-    //             leaf.styles.advanced ??= { textAlign: "left" }
-    //         }
-
-    //         if (prevSpanY != spanY) {
-    //             totalHeight += spanHeight
-    //             prevSpanY = spanY
-    //         }
-
-    //         if (nextPage == page && leaf && prevLeaf) {
-    //             pagedModel[page - 1] ??= []
-    //             pagedModel[page - 1].push({type : "text", children : similar})
-    //             similar = []
-    //         }
-
-    //         if (prevLeaf && leaf && prevLeaf.styles?.advanced?.textAlign == leaf.styles?.advanced?.textAlign) {
-    //             if (!similar.includes(prevLeaf)) similar.push(prevLeaf)
-    //             console.log(leaf)
-    //             similar.push(leaf)
-    //         }
-    //         if ((leaf && prevLeaf && prevLeaf?.styles?.advanced?.textAlign != leaf.styles?.advanced?.textAlign) || i == flatDomRepresentation.length - 1) {
-    //             console.log("hi")
-    //             const textAlign = leaf.styles?.advanced?.textAlign == null ? "text" : "align_" + leaf.styles?.advanced?.textAlign
-    //             pagedModel[page] ??= []
-    //             pagedModel[page].push({ type: textAlign, children: similar })
-    //             similar = []
-    //         }
-
-    //         nextPage = page + 1
-    //         prevLeaf = leaf
-    //     }    
-
-    //     return pagedModel
-    // }
-
-    // let paginatedModel = paginate()
+        console.warn(caretPosition.current, undoModel)
+    }, [])
 
     const groupedModel = []
     let textGroup: Leaf[] = []
@@ -584,7 +517,7 @@ export default function Paragraph() {
         setModel(newModel)
     }
 
-    function Image({ src, id, style }: { src: string, id: string, style : CSSProperties }) {
+    function Image({ src, id, style }: { src: string, id: string, style: CSSProperties }) {
 
         const sizeInModel = {
             x: typeof style.width == "number" ? style.width : parseInt(style.width as string),
@@ -673,7 +606,6 @@ export default function Paragraph() {
         )
     }
 
-    // paginatedModel ??= [groupedModel]
     return (
         <div id={useId()} suppressContentEditableWarning contentEditable={true} onKeyDown={keyDown}
             onPasteCapture={paste} ref={thisTextArea} onBeforeInput={updateDomModel} className="textInput"

@@ -24,8 +24,8 @@ function getEditableContentDiv() {
 }
 
 export default function Format({ style, advanced = undefined }: FormatTypes) {
-    const model = modelStore(s => s.model)
-    const setModel = modelStore(s => s.setModel)
+    const model = modelStore.getState().model
+    const setModel = modelStore.getState().setModel
 
     const editableContentDiv = getEditableContentDiv()
     if (!editableContentDiv) return

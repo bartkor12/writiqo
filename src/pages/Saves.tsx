@@ -35,20 +35,19 @@ export default function Saves() {
             <div className="saves">
                 {!saves ? (
                     <>
-                    <LoadingCard />
-                    <LoadingCard />
-                    <LoadingCard />
-                    <LoadingCard />
-                    <LoadingCard />
-                    <LoadingCard />
+                        <LoadingCard />
+                        <LoadingCard />
+                        <LoadingCard />
+                        <LoadingCard />
+                        <LoadingCard />
+                        <LoadingCard />
                     </>
                 )
-                : null
+                    : null
                 }
                 {saves?.map(save => (
                     <SaveCard metadata={save} key={save.id} />
                 ))}
-                <div className="savesSpacer"/>
             </div>
         </div>
     )
@@ -140,6 +139,8 @@ function SaveCard({ metadata }: { metadata: ImportedModel }) {
                     .eq("id", metadata.id)
 
                 if (saveCard.current) saveCard.current.remove()
+
+                if (document.querySelectorAll(".saveCard").length == 0) navigate("/")
 
                 if (error) throw error
             }

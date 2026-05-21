@@ -104,13 +104,13 @@
   padding-bottom: 40px;
 }
 
-/* Root container matches .saveCard exactly */
 .sc_load_root {
   height: 80px;
   width: 100%;
   display: flex;
   flex-direction: row;
   gap: 20px;
+  flex-shrink: 0;
   padding: 10px;
   border-radius: 5px;
   background-color: var(--body);
@@ -122,7 +122,6 @@
   cursor: default;
 }
 
-/* Shimmer animation */
 @keyframes shimmer {
   0% {
     background-position: -400px 0;
@@ -132,7 +131,6 @@
   }
 }
 
-/* Shared skeleton style */
 .skeleton {
   border-radius: 5px;
   background: linear-gradient(
@@ -145,7 +143,6 @@
   animation: shimmer 1.5s infinite linear;
 }
 
-/* Image wrapper skeleton matches .saveCardImgWrapper */
 .sc_load_imgWrap {
   height: 80px;
   width: 80px;
@@ -166,7 +163,6 @@
   animation: shimmer 1.5s infinite linear;
 }
 
-/* Text block skeleton matches .saveText */
 .sc_load_textBlock {
   display: flex;
   flex-direction: column;
@@ -203,7 +199,6 @@
   animation: shimmer 1.5s infinite linear;
 }
 
-/* Metadata skeleton matches .saveMetadata */
 .sc_load_metaBlock {
   display: flex;
   gap: 50px;
@@ -227,7 +222,6 @@
   animation: shimmer 1.5s infinite linear;
 }
 
-/* Menu skeleton matches .saveMenu */
 .sc_load_menuSkeleton {
   width: 30px;
   height: 30px;
@@ -276,6 +270,7 @@
   background-color: var(--body);
   display: flex;
   flex-direction: row;
+  flex-shrink: 0;
   justify-content: left;
   gap: 20px;
   padding: 10px;
