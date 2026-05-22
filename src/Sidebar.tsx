@@ -63,7 +63,6 @@ export default function Sidebar() {
       onMouseLeave={mouseLeave}
       style={{ left: sliderX }}
     >
-      <img src="writiqo.svg" className='icon' onMouseDown={e => e.preventDefault()} />
       {tools.map((name,index) => {
         const toolDefault = getComputedStyle(document.documentElement).getPropertyValue("--tool-default")
         const toolActive = getComputedStyle(document.documentElement).getPropertyValue("--tool-active")

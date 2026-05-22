@@ -163,7 +163,7 @@ function Import({ cloud }: { cloud: boolean }) {
 }
 
 export default function Ribbon() {
-    return (<>
+    return (<div id="topBarWrapper">
         <div id="menubar">
             <Dropdown id="fileDropdown">
                 <Print />
@@ -175,6 +175,7 @@ export default function Ribbon() {
         </div>
         <div id="ribbonWrapper">
             <div id="ribbon">
+                <img src="writiqo_inkscape.svg" className='icon' onMouseDown={e => e.preventDefault()} style={{marginRight : 60}} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     <span className="descriptor">Text Modifications</span>
                     <div style={{ display: "flex", gap: 5 }}>
@@ -213,7 +214,7 @@ export default function Ribbon() {
                 <LoginButton />
             </div>
         </div>
-    </>
+    </div>
     )
 }
 
@@ -415,7 +416,7 @@ function FormatSlider({ style, type, unit, min, max, sensitivity }: {
     }
 
     return (
-        <div style={{ display: "flex", position: "relative" }} className="formatSlider formatContainer">
+        <div onLoad={() => {if (style == "fontSize" ) setValue(32)}} style={{ display: "flex", position: "relative" }} className="formatSlider formatContainer">
             {type == "horizontal" &&
                 <img onClick={onClick} src="format_letter_spacing.svg" alt="" />
             }

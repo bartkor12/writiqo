@@ -324,6 +324,9 @@ export default function Paragraph() {
                 newModel.splice(leafIndex + 2, 0, { text: leafIndexText.slice(startLeafOffset), styles })
                 removeEmpty()
                 caretPosition.current += 2
+                scrollToEnd()
+                // thisTextArea.current!.scrollTop = CaretPosition(thisTextArea.current!).top
+                // thisTextArea.current!.scrollTo({ top: CaretPosition(thisTextArea.current!).top + 500, behavior: "instant" })
             }
             else if (!e.ctrlKey) {
                 newModel[leafIndex].text = leafIndexText.slice(0, startLeafOffset) + leafIndexText.slice(endLeafOffset, leafIndexText.length)
@@ -332,6 +335,13 @@ export default function Paragraph() {
 
         setModel(newModel)
         caretPosition.current = caretPosition.current - (selectionLength + 1) > 0 ? caretPosition.current - (selectionLength + 1) : 0
+    }
+
+    function scrollToEnd() {
+        const selection = window.getSelection()
+        if (selection)
+        thisTextArea.current!.scrollTo({behavior : "smooth",top : selection.getRangeAt(0).getBoundingClientRect().top - thisTextArea.current!.getBoundingClientRect().top + thisTextArea.current!.scrollTop - 300})
+
     }
 
     function keyDown(e: React.KeyboardEvent) {
@@ -353,20 +363,20 @@ export default function Paragraph() {
         formatSelection(e)
     }
 
-function updateUndoModel(newModel: Leaf[]) {
-    if (undoIndex.current == 0) {
-        if (JSON.stringify(undoModel.current.at(-1)) != JSON.stringify(newModel)) {
-            undoModel.current.push(makeNewModel())
-            // STRATEGY: Trust your internal ref tracking here
-            undoCaretPositions.current.push(caretPosition.current) 
+    function updateUndoModel(newModel: Leaf[]) {
+        if (undoIndex.current == 0) {
+            if (JSON.stringify(undoModel.current.at(-1)) != JSON.stringify(newModel)) {
+                undoModel.current.push(makeNewModel())
+                // STRATEGY: Trust your internal ref tracking here
+                undoCaretPositions.current.push(caretPosition.current)
+            }
+            if (undoModel.current.length > maxUndo) {
+                undoModel.current.shift()
+                undoCaretPositions.current.shift() // Keep this! It fixes the desync.
+            }
         }
-        if (undoModel.current.length > maxUndo) {
-            undoModel.current.shift()
-            undoCaretPositions.current.shift() // Keep this! It fixes the desync.
-        }
+        return undoIndex.current == 0
     }
-    return undoIndex.current == 0
-}
 
     useLayoutEffect(() => {
         if (caretPosition.current == 0) caretPosition.current = 1
@@ -474,6 +484,8 @@ function updateUndoModel(newModel: Leaf[]) {
             caretPosition.current += clipboardText.length
             setModel(newModel)
         }
+
+        scrollToEnd()
     }
 
     function onDrop(e: React.DragEvent) {
@@ -488,7 +500,7 @@ function updateUndoModel(newModel: Leaf[]) {
         const offsetNode = offset?.offsetNode.parentElement
         const flatDomRepresentation = Array.from(thisTextArea.current.querySelectorAll("*")).filter(item => (item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE) || item instanceof HTMLImageElement && !item.classList.contains("deleteImgButton"))
         if (!offsetNode) return
-
+        
         const leafOffset = offset.offset
         let leafIndex = flatDomRepresentation.indexOf(offsetNode)
 
@@ -498,6 +510,7 @@ function updateUndoModel(newModel: Leaf[]) {
         const newModelLeaf = newModel[leafIndex]
         const cachedText = newModelLeaf.text
         const imgIndex = newModel.map(el => el.id).findIndex(el => el == img.id)
+        // console.log(flatDomRepresentation,newModel)
 
         // console.log(newModel.map(e => e.text ?? e.styles?.image),flatDomRepresentation.map(e => e instanceof HTMLSpanElement ? e.textContent : e))
         console.log(newModel.length, flatDomRepresentation.length, cachedText, leafIndex)
@@ -547,7 +560,7 @@ function updateUndoModel(newModel: Leaf[]) {
             x: sizeInModel.x || 0,
             y: sizeInModel.y || 0,
         }))
-        const [draggable, setDraggable] = useState<boolean>(false)
+        const [draggable, setDraggable] = useState<boolean>(true)
         const styles: CSSProperties = {
             "userSelect": "none", "WebkitUserSelect": "none", "cursor": draggable ? "grab" : "nwse-resize",
             "width": size?.x, "height": size?.y, "minWidth": 60, "minHeight": 60
