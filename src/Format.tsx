@@ -75,7 +75,7 @@ export default function Format({ style, advanced = undefined }: FormatTypes) {
             return range
         }
         // const flatDomRepresentation = Array.from(editableContentDiv.querySelectorAll("*")).filter(item => item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE)
-        const flatDomRepresentation = Array.from(editableContentDiv.querySelectorAll("*")).filter(item => (item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE) || item instanceof HTMLImageElement )
+        const flatDomRepresentation = Array.from(editableContentDiv.querySelectorAll("[data-leaf]"));
         const startNode = flatDomRepresentation[getLeafIndexFromCaretPosition(start)].firstChild
         const endNode = flatDomRepresentation[getLeafIndexFromCaretPosition(end)].firstChild
 

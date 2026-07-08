@@ -1,8 +1,8 @@
 import React, { useCallback, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react"
 import { position as CaretPosition } from "caret-pos"
 import Format from "./Format"
-import { filterEmptyLeaf } from "./utils/general"
 import { modelStore } from "./utils/stores"
+import { normalizeModel } from "./utils/general"
 
 export default function Paragraph() {
     const model = modelStore(s => s.model)
@@ -100,59 +100,6 @@ export default function Paragraph() {
 
         let newModel: Leaf[] = makeNewModel()
 
-        function removeEmpty() {
-
-            const changedModel: Leaf[] = []
-
-            for (let i = 0; i < newModel.length; i++) {
-                const leaf = newModel[i];
-
-                if (leaf.text == "\n\u200B") {
-                    changedModel.push(leaf)
-                    continue
-                }
-
-                if (leaf.text == "\u200B" && i > 0 && newModel[i - 1]?.styles?.image) {
-                    changedModel.push(leaf)
-                    continue
-                }
-
-                if (newModel[i - 1]?.styles?.image && leaf.text != "\u200B") {
-                    changedModel.push({ text: "\u200B" })
-                    console.warn("herro world")
-                    continue
-                }
-
-                leaf.text = leaf.text.replace(/^\u200B+/, "")
-
-                changedModel.push(leaf)
-            }
-
-            newModel = filterEmptyLeaf(changedModel)
-
-            // fixes enter key
-            for (let i = 0; i < newModel.length; i++) {
-                const leaf = newModel[i]
-
-                if (i + 1 < newModel.length && leaf.text == "\n") {
-
-                    if (newModel[i + 1].text == '\u200B') {
-                        i += 2
-                    }
-                    else {
-                        leaf.text = "\n\u200B"
-                        caretPosition.current += 1
-                    }
-                }
-
-                if (i > newModel.length) return
-
-                if (i > 0 && i < newModel.length - 1) {
-                    leaf.text = leaf.text.replace(/^\u2060+/, "")
-                }
-            }
-        }
-
         // format and style
         if (e.ctrlKey && style) {
             e.preventDefault()
@@ -184,7 +131,9 @@ export default function Paragraph() {
 
         if (!newModel[0] || newModel[0].text != "\u2060\u2060") {
             newModel.unshift({ text: '\u2060\u2060' })
+
             removeEmpty()
+
             caretPosition.current += 2
             console.warn("bruh")
         }
@@ -498,7 +447,7 @@ export default function Paragraph() {
 
         const offset = document.caretPositionFromPoint(e.clientX, e.clientY)
         const offsetNode = offset?.offsetNode.parentElement
-        const flatDomRepresentation = Array.from(thisTextArea.current.querySelectorAll("*")).filter(item => (item.firstChild && item.firstChild.nodeType == Node.TEXT_NODE) || item instanceof HTMLImageElement && !item.classList.contains("deleteImgButton"))
+        const flatDomRepresentation = Array.from(thisTextArea.current.querySelectorAll("[data-leaf]"))
         if (!offsetNode) return
         
         const leafOffset = offset.offset
@@ -512,8 +461,9 @@ export default function Paragraph() {
         const imgIndex = newModel.map(el => el.id).findIndex(el => el == img.id)
         // console.log(flatDomRepresentation,newModel)
 
-        // console.log(newModel.map(e => e.text ?? e.styles?.image),flatDomRepresentation.map(e => e instanceof HTMLSpanElement ? e.textContent : e))
-        console.log(newModel.length, flatDomRepresentation.length, cachedText, leafIndex)
+        console.log(newModel.map(e => e.text ?? e.styles?.image),flatDomRepresentation.map(e => e instanceof HTMLSpanElement ? e.textContent : e))
+        console.log(newModel,flatDomRepresentation.map(e => e instanceof HTMLSpanElement ? e.textContent : e))
+        // console.log(newModel.length, flatDomRepresentation.length, cachedText, leafIndex)
 
         if (newModel.length != flatDomRepresentation.length) {
             console.warn("length match error")
@@ -632,7 +582,7 @@ export default function Paragraph() {
         }
 
         return (
-            <div className="imgDiv" contentEditable={false}>
+            <div className="imgDiv" contentEditable={false} data-leaf>
                 <img onLoad={onLoad} draggable={draggable} src={src} style={styles} onMouseDown={collapseSelection} onClick={resize} onDragStart={onDragStart} onDrop={e => e.preventDefault()} id={id} />
                 <div className="deleteImgButton" onClick={onClickdelete} />
             </div>
@@ -681,7 +631,7 @@ export default function Paragraph() {
                             }
 
                             return override || (
-                                <span key={i + "-" + index} style={styles}>
+                                <span key={i + "-" + index} style={styles} data-leaf>
                                     {leaf.text}
                                 </span>
                             )
