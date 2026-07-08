@@ -126,6 +126,7 @@
   0% {
     background-position: -400px 0;
   }
+
   100% {
     background-position: 400px 0;
   }
@@ -133,12 +134,10 @@
 
 .skeleton {
   border-radius: 5px;
-  background: linear-gradient(
-    90deg,
-    var(--body) 0%,
-    #e0e0e0 50%,
-    var(--body) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--body) 0%,
+      #e0e0e0 50%,
+      var(--body) 100%);
   background-size: 400px 80px;
   animation: shimmer 1.5s infinite linear;
 }
@@ -149,16 +148,15 @@
   border-radius: 10px;
   flex-shrink: 0;
 }
+
 .sc_load_imgSkeleton {
   width: 100%;
   height: 100%;
   border-radius: 10px;
-  background: linear-gradient(
-    90deg,
-    var(--body) 0%,
-    #e0e0e0 50%,
-    var(--body) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--body) 0%,
+      #e0e0e0 50%,
+      var(--body) 100%);
   background-size: 400px 80px;
   animation: shimmer 1.5s infinite linear;
 }
@@ -175,12 +173,10 @@
   width: 200px;
   height: 32px;
   border-radius: 5px;
-  background: linear-gradient(
-    90deg,
-    var(--body) 0%,
-    #e0e0e0 50%,
-    var(--body) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--body) 0%,
+      #e0e0e0 50%,
+      var(--body) 100%);
   background-size: 400px 32px;
   animation: shimmer 1.5s infinite linear;
 }
@@ -189,12 +185,10 @@
   width: 150px;
   height: 16px;
   border-radius: 5px;
-  background: linear-gradient(
-    90deg,
-    var(--body) 0%,
-    #e0e0e0 50%,
-    var(--body) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--body) 0%,
+      #e0e0e0 50%,
+      var(--body) 100%);
   background-size: 400px 16px;
   animation: shimmer 1.5s infinite linear;
 }
@@ -212,12 +206,10 @@
   width: 80px;
   height: 16px;
   border-radius: 5px;
-  background: linear-gradient(
-    90deg,
-    var(--body) 0%,
-    #e0e0e0 50%,
-    var(--body) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--body) 0%,
+      #e0e0e0 50%,
+      var(--body) 100%);
   background-size: 400px 16px;
   animation: shimmer 1.5s infinite linear;
 }
@@ -226,12 +218,10 @@
   width: 30px;
   height: 30px;
   border-radius: 5px;
-  background: linear-gradient(
-    90deg,
-    var(--body) 0%,
-    #e0e0e0 50%,
-    var(--body) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--body) 0%,
+      #e0e0e0 50%,
+      var(--body) 100%);
   background-size: 400px 30px;
   animation: shimmer 1.5s infinite linear;
 }
@@ -284,7 +274,7 @@
 }
 
 .saveText:hover .saveName {
-  text-decoration-line : underline;
+  text-decoration-line: underline;
 }
 
 .saveDropdown {
@@ -304,6 +294,7 @@
   padding-top: 5px;
   background-color: var(--tool-default);
 }
+
 .saveDropdown span:hover {
   filter: invert();
 }
@@ -752,6 +743,62 @@ body {
   left: 50%;
 }
 
+.accountSettings {
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+
+.personalData {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 80vw;
+  padding: 32px;
+  height: 30vh;
+  background-color: var(--body);
+  border-radius: 5px;
+}
+
+.settingsInputs {
+  display: flex;
+}
+
+.settingsInputs div {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+
+.settingsTextInput {
+  font-family: Inter Tight;
+  font-size: 20px;
+  margin: 20px;
+}
+
+.settingsTextInput input {
+  border-radius: 5px;
+  border: 2px solid var(--body-dull);
+  height: 50px;
+  font-size: 24px;
+  width: 300px;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  width: 300px;
+  height: 50px;
+  margin: 20px;
+  background-color: var(--tool-default);
+  color: var(--body);
+  font-size: 24px;
+  border:none;
+  border-radius: 5px;
+}
+
 .textInputWrapper {
   background-color: var(--body) !important;
   box-shadow: 5px 4px 15px 5px rgba(0, 0, 0, 0.1);
@@ -792,6 +839,7 @@ body {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
 .textinput::after {
   content: "";
   height: 500px;
@@ -830,7 +878,8 @@ body {
   align-items: center;
   cursor: pointer;
 }
-#login > * {
+
+#login>* {
   user-select: none;
 }
 
@@ -852,7 +901,7 @@ body {
 
 .avatarpfp {
   border-radius: 50%;
-    display: flex !important;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   position: relative;
@@ -865,6 +914,26 @@ body {
   left: -3px;
   width: 50px;
   height: 50px;
+  border: var(--body) 3px solid;
+  border-radius: 50%;
+}
+
+.bigavatarpfp {
+  border-radius: 50%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.bigavatarpfp::before {
+  content: "";
+  position: absolute;
+  font-size: 32px;
+  top: -3px;
+  left: -3px;
+  width: 200px;
+  height: 200px;
   border: var(--body) 3px solid;
   border-radius: 50%;
 }

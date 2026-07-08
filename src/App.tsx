@@ -5,6 +5,7 @@ import Saves from "./pages/Saves";
 import { useEffect } from "react";
 import { supabase } from "./supabase";
 import { authStore } from "./utils/stores";
+import AccountSettings from "./pages/AccountSettings";
 
 export default function App() {
 
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/" element={<Editor />} />
             <Route path="/login" element={<Login />} />
             <Route path="/saves" element={<Saves/>}/>
+            <Route path="/settings" element={<AccountSettings/>} />
         </Routes >
     )
 }
