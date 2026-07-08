@@ -117,7 +117,7 @@ export default function Format({ style, advanced = undefined }: FormatTypes) {
             if (advanced) {
                 const styles : CSSProperties = { ...leaf.styles.advanced }
                 
-                if (styles[advanced.property] && !advanced.overwrite) {2
+                if (styles[advanced.property] && !advanced.overwrite) {
                     delete styles[advanced.property]
                 } else {
                     styles[advanced.property] = advanced.value

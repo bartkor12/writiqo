@@ -132,7 +132,7 @@ export default function Paragraph() {
         if (!newModel[0] || newModel[0].text != "\u2060\u2060") {
             newModel.unshift({ text: '\u2060\u2060' })
 
-            removeEmpty()
+            normalizeModel(newModel)
 
             caretPosition.current += 2
             console.warn("bruh")
@@ -140,7 +140,7 @@ export default function Paragraph() {
 
         if (newModel[newModel.length - 1].text != "\u2060\u2060") {
             newModel.splice(newModel.length, 0, { text: '\u2060\u2060' })
-            removeEmpty()
+            normalizeModel(newModel)
             // caretPosition.current -= 2
         }
 
@@ -231,7 +231,7 @@ export default function Paragraph() {
                     }
                 }
 
-                removeEmpty()
+                normalizeModel(newModel)
                 caretPosition.current -= 1
             }
             else if (e.ctrlKey && e.key.toLowerCase() === "z") {
@@ -271,7 +271,7 @@ export default function Paragraph() {
                 newModel.splice(leafIndex, 1, { text: leafIndexText.slice(0, startLeafOffset), styles })
                 newModel.splice(leafIndex + 1, 0, { text: "\n\u200B", styles })
                 newModel.splice(leafIndex + 2, 0, { text: leafIndexText.slice(startLeafOffset), styles })
-                removeEmpty()
+                normalizeModel(newModel)
                 caretPosition.current += 2
                 scrollToEnd()
                 // thisTextArea.current!.scrollTop = CaretPosition(thisTextArea.current!).top
