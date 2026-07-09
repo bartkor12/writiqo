@@ -6,7 +6,17 @@ export function delay(delay: number) {
 }
 
 export function filterEmptyLeaf(array: Leaf[]) {
-    return array.filter(item => item.text !== "" || item.styles?.image)
+
+    let write = 0
+
+    for (let read = 0; read < array.length; read++) {
+        const leaf = array[read];
+
+        if (leaf.text !== "" || leaf.styles?.image) {
+            array[write++] = leaf
+        }
+    }
+    array.length = write
 }
 
 export function decompressModel(model: string, version: number) {
@@ -24,8 +34,9 @@ export function compressModel() {
 
 
 //! IMPORTANT, TOP PRIORITY! replace removeEmpty entirely by a mutating normalizeModel function for code cleanliness and performance
-export function normalizeModel(newModel : Leaf[]) : [Leaf[], number] {
+export function normalizeModel(newModel: Leaf[]): [number] {
 
+    // old
     const changedModel: Leaf[] = []
     let caretPositionShift = 0
 
@@ -51,7 +62,29 @@ export function normalizeModel(newModel : Leaf[]) : [Leaf[], number] {
         changedModel.push(leaf)
     }
 
-    newModel = filterEmptyLeaf(changedModel)
+    // new
+    let write = 0
+
+    for (let read = 0; read < newModel.length; read++) {
+        const leaf = newModel[read]
+
+        if (leaf.text == "\n\u200B" || (leaf.text == "\u200B" && read > 0 && newModel[read - 1]?.styles?.image)) {
+            newModel[write++] = leaf
+            continue
+        }
+
+        if (newModel[read - 1]?.styles?.image && !leaf.text.startsWith("\u200B")) {
+            newModel[write++] = { text: "\u200B" }
+        }
+
+        leaf.text = leaf.text.replace(/^\u200B+/, "")
+
+        newModel[write++] = leaf
+    }
+
+    newModel.length = write
+
+    filterEmptyLeaf(changedModel)
 
     // fixes enter key
     for (let i = 0; i < newModel.length; i++) {
@@ -75,5 +108,5 @@ export function normalizeModel(newModel : Leaf[]) : [Leaf[], number] {
         }
     }
 
-    return [newModel,caretPositionShift]
+    return [caretPositionShift]
 }
