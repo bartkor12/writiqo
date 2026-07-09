@@ -837,6 +837,7 @@ body {
   overflow-x: hidden;
   overflow-y: scroll;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
   word-break: break-word;
 }
 

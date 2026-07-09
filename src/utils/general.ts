@@ -33,80 +33,75 @@ export function compressModel() {
 }
 
 
-//! IMPORTANT, TOP PRIORITY! replace removeEmpty entirely by a mutating normalizeModel function for code cleanliness and performance
 export function normalizeModel(newModel: Leaf[]): [number] {
-
-    // old
-    const changedModel: Leaf[] = []
     let caretPositionShift = 0
-
-    for (let i = 0; i < newModel.length; i++) {
-        const leaf = newModel[i];
-
-        if (leaf.text == "\n\u200B") {
-            changedModel.push(leaf)
-            continue
-        }
-
-        if (leaf.text == "\u200B" && i > 0 && newModel[i - 1]?.styles?.image) {
-            changedModel.push(leaf)
-            continue
-        }
-
-        if (newModel[i - 1]?.styles?.image && !leaf.text.startsWith("\u200B")) {
-            changedModel.push({ text: "\u200B" })
-        }
-
-        leaf.text = leaf.text.replace(/^\u200B+/, "")
-
-        changedModel.push(leaf)
-    }
-
-    // new
     let write = 0
+    let previousLeafWasImage = false
 
     for (let read = 0; read < newModel.length; read++) {
         const leaf = newModel[read]
 
-        if (leaf.text == "\n\u200B" || (leaf.text == "\u200B" && read > 0 && newModel[read - 1]?.styles?.image)) {
-            newModel[write++] = leaf
-            continue
-        }
-
-        if (newModel[read - 1]?.styles?.image && !leaf.text.startsWith("\u200B")) {
-            newModel[write++] = { text: "\u200B" }
-        }
-
-        leaf.text = leaf.text.replace(/^\u200B+/, "")
-
-        newModel[write++] = leaf
-    }
-
-    newModel.length = write
-
-    filterEmptyLeaf(changedModel)
-
-    // fixes enter key
-    for (let i = 0; i < newModel.length; i++) {
-        const leaf = newModel[i]
-
-        if (i + 1 < newModel.length && leaf.text == "\n") {
-
-            if (newModel[i + 1].text == '\u200B') {
-                i += 2
+        if (read + 1 < newModel.length && leaf.text == "\n") {
+            if (newModel[read + 1].text == '\u200B') {
+                read++
             }
             else {
                 leaf.text = "\n\u200B"
                 caretPositionShift += 1
             }
+            continue
         }
 
-        if (i > newModel.length) return
-
-        if (i > 0 && i < newModel.length - 1) {
+        if (read > 0 && read < newModel.length - 1) {
             leaf.text = leaf.text.replace(/^\u2060+/, "")
         }
+
+        if (read + 1 < newModel.length && newModel[read+1].styles == leaf.styles && leaf.text != "\n\u200B" && newModel[read+1].text != "\n\u200B") {
+            leaf.text += newModel[read + 1].text
+            read++
+        }
+        
+        if (leaf.text == "\n\u200B" || (leaf.text == "\u200B" && previousLeafWasImage)) { // if issues arise readd read > 0
+            newModel[write++] = leaf
+            previousLeafWasImage = !!leaf.styles?.image
+            continue
+        }
+        
+        if (previousLeafWasImage && !leaf.text.startsWith("\u200B")) {
+            newModel[write++] = { text: "\u200B" }
+        }
+        
+        leaf.text = leaf.text.replace(/^\u200B+/, "")
+        
+        newModel[write++] = leaf
+        previousLeafWasImage = !!leaf.styles?.image
     }
+
+    newModel.length = write
+
+    filterEmptyLeaf(newModel)
+
+    // ? if enter breaks, uncomment or revert changes to this 
+    // for (let i = 0; i < newModel.length; i++) {
+    //     const leaf = newModel[i]
+
+    //     if (i + 1 < newModel.length && leaf.text == "\n") {
+
+    //         if (newModel[i + 1].text == '\u200B') {
+    //             i += 2
+    //         }
+    //         else {
+    //             leaf.text = "\n\u200B"
+    //             caretPositionShift += 1
+    //         }
+    //     }
+
+    //     if (i > newModel.length) continue
+
+    //     if (i > 0 && i < newModel.length - 1) {
+    //         leaf.text = leaf.text.replace(/^\u2060+/, "")
+    //     }
+    // }
 
     return [caretPositionShift]
 }

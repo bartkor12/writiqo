@@ -332,6 +332,8 @@ export default function Paragraph() {
         CaretPosition(thisTextArea.current!, caretPosition.current + 1)
     }, [model])
 
+
+    // ? whole code below is a mess, the groupSimilar section and the for loop need to be refactored to something cleaner
     const groupedModel = []
     let textGroup: Leaf[] = []
 
