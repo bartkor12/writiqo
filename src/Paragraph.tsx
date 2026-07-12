@@ -161,7 +161,7 @@ export default function Paragraph() {
 
         if (e.key === "Home") {
             e.preventDefault()
-            const textToStartLine = newModel.slice(0, leafIndex + 1).map(el => el.text).join("").split("\n\u200B")
+            const textToStartLine = newModel.slice(0, leafIndex + 1).map(el => el.text).join("").split("\n\uFEFF")
             textToStartLine.pop()
             const lengthToStartLine = textToStartLine.join("").length + textToStartLine.length * 2
 
@@ -173,7 +173,7 @@ export default function Paragraph() {
         }
 
         // erase and delete
-        caretPosition.current += newModel[startLeafIndex].text[startLeafOffset] == "\u200B" && newModel[startLeafIndex]?.text[startLeafOffset - 1] == "\n" ? 1 : 0
+        caretPosition.current += newModel[startLeafIndex].text[startLeafOffset] == "\uFEFF" && newModel[startLeafIndex]?.text[startLeafOffset - 1] == "\n" ? 1 : 0
 
         if (e.ctrlKey && e.key === "c" && !window.getSelection()?.isCollapsed) {
             navigator.clipboard.writeText(window.getSelection()!.toString())
@@ -194,9 +194,9 @@ export default function Paragraph() {
         }
         else {
             if ((e.key === "Backspace" || e.key === "Delete") && startLeafOffset == endLeafOffset) {
-                if (e.ctrlKey && newModel[startLeafIndex].text != "" && leafIndexText != '\n\u200B') {
+                if (e.ctrlKey && newModel[startLeafIndex].text != "" && leafIndexText != '\n\uFEFF') {
                     const firstHalf = newModel.slice(0, leafIndex + 1).flatMap(leaf => leaf.text).join("").slice(0, caretPosition.current)
-                    const newLineOffset = firstHalf.split('\n\u200B').reverse().filter(item => item !== "")[0].length
+                    const newLineOffset = firstHalf.split('\n\uFEFF').reverse().filter(item => item !== "")[0].length
                     const spaceLeafOffset = firstHalf.split(" ").reverse().filter(item => item !== "")[0].length
                     const deletionOffset = Math.min(spaceLeafOffset, newLineOffset)
                     const spacePosition = caretPosition.current - deletionOffset
@@ -207,11 +207,11 @@ export default function Paragraph() {
                         // console.log("hiiii2" + leafIndexText.slice(startLeafOffset, leafIndexText.length)
                         console.log("here")
                         newModel[spaceLeafIndex].text = newModel[spaceLeafIndex].text.slice(0, getLeafIndexFromCaretPosition(spacePosition, true))
-                        newModel[leafIndex].text = leafIndexText.slice(startLeafOffset, leafIndexText.length).replace(/[\n\u200B ]/g, "")
+                        newModel[leafIndex].text = leafIndexText.slice(startLeafOffset, leafIndexText.length).replace(/[\n\uFEFF ]/g, "")
                     }
                     else {
                         console.log("right here")
-                        newModel[leafIndex].text = leafIndexText.slice(0, getLeafIndexFromCaretPosition(spacePosition, true)) + leafIndexText.slice(endLeafOffset, leafIndexText.length).replace(/[\n\u200B ]/g, "")
+                        newModel[leafIndex].text = leafIndexText.slice(0, getLeafIndexFromCaretPosition(spacePosition, true)) + leafIndexText.slice(endLeafOffset, leafIndexText.length).replace(/[\n\uFEFF ]/g, "")
                     }
                     if (leafIndex - spaceLeafIndex > 1) {
                         newModel.splice(spaceLeafIndex + 1, leafIndex - spaceLeafIndex - 1);
@@ -220,7 +220,7 @@ export default function Paragraph() {
                 }
                 else {
                     console.log(leafIndexText)
-                    if (leafIndexText == "\n\u200B") {
+                    if (leafIndexText == "\n\uFEFF") {
                         if (getLeafIndexFromCaretPosition(caretPosition.current, true) == 1) caretPosition.current += 1
                         newModel.splice(leafIndex, 1)
                         caretPosition.current -= 1
@@ -269,7 +269,7 @@ export default function Paragraph() {
             else if (e.key === "Enter") {
                 const styles = newModel[leafIndex].styles
                 newModel.splice(leafIndex, 1, { text: leafIndexText.slice(0, startLeafOffset), styles })
-                newModel.splice(leafIndex + 1, 0, { text: "\n\u200B", styles })
+                newModel.splice(leafIndex + 1, 0, { text: "\n\uFEFF", styles })
                 newModel.splice(leafIndex + 2, 0, { text: leafIndexText.slice(startLeafOffset), styles })
                 normalizeModel(newModel)
                 caretPosition.current += 2
@@ -280,7 +280,7 @@ export default function Paragraph() {
             else if (!e.ctrlKey) {
                 newModel[leafIndex].text = leafIndexText.slice(0, startLeafOffset) + leafIndexText.slice(endLeafOffset, leafIndexText.length)
             }
-        } // deletes \u200B\n on the same line
+        } // deletes \uFEFF\n on the same line
 
         setModel(newModel)
         caretPosition.current = caretPosition.current - (selectionLength + 1) > 0 ? caretPosition.current - (selectionLength + 1) : 0
@@ -330,6 +330,7 @@ export default function Paragraph() {
     useLayoutEffect(() => {
         if (caretPosition.current == 0) caretPosition.current = 1
         CaretPosition(thisTextArea.current!, caretPosition.current + 1)
+        console.log(caretPosition.current)
     }, [model])
 
 
@@ -412,7 +413,7 @@ export default function Paragraph() {
                     })
 
                     if (cachedText.slice(getLeafIndexFromCaretPosition(caretPosition.current + 1, true)).length === 0) {
-                        newModel.splice(nextLeafIndex + 2, 0, { text: "\u200B" })
+                        newModel.splice(nextLeafIndex + 2, 0, { text: "\uFEFF" })
                     }
 
                     caretPosition.current += 1
@@ -577,8 +578,8 @@ export default function Paragraph() {
             const newModel = makeNewModel()
             const imgIndex = newModel.map(el => el.id).findIndex(el => el == id)
             newModel.splice(imgIndex, 1)
-            if (imgIndex + 1 < newModel.length && newModel[imgIndex + 1].text == "\u200B") newModel.splice(imgIndex + 1, 1)
-            if (newModel[imgIndex - 1].text == "\u200B") newModel.splice(imgIndex - 1, 1)
+            if (imgIndex + 1 < newModel.length && newModel[imgIndex + 1].text == "\uFEFF") newModel.splice(imgIndex + 1, 1)
+            if (newModel[imgIndex - 1].text == "\uFEFF") newModel.splice(imgIndex - 1, 1)
 
             setModel(newModel)
         }

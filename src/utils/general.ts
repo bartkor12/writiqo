@@ -42,11 +42,12 @@ export function normalizeModel(newModel: Leaf[]): [number] {
         const leaf = newModel[read]
 
         if (read + 1 < newModel.length && leaf.text == "\n") {
-            if (newModel[read + 1].text == '\u200B') {
+            if (newModel[read + 1].text == '\uFEFF') {
                 read++
             }
             else {
-                leaf.text = "\n\u200B"
+                leaf.text = "\n\uFEFF"
+                // newModel[write++] = leaf
                 caretPositionShift += 1
             }
             continue
@@ -54,24 +55,24 @@ export function normalizeModel(newModel: Leaf[]): [number] {
 
         if (read > 0 && read < newModel.length - 1) {
             leaf.text = leaf.text.replace(/^\u2060+/, "")
-        }
+        }   
 
-        if (read + 1 < newModel.length && newModel[read+1].styles == leaf.styles && leaf.text != "\n\u200B" && newModel[read+1].text != "\n\u200B") {
+        if (read + 1 < newModel.length && newModel[read+1].styles == leaf.styles && leaf.text != "\n\uFEFF" && newModel[read+1].text != "\n\uFEFF") {
             leaf.text += newModel[read + 1].text
             read++
         }
         
-        if (leaf.text == "\n\u200B" || (leaf.text == "\u200B" && previousLeafWasImage)) { // if issues arise readd read > 0
+        if (leaf.text == "\n\uFEFF" || (leaf.text == "\uFEFF" && previousLeafWasImage)) { // if issues arise readd read > 0
             newModel[write++] = leaf
             previousLeafWasImage = !!leaf.styles?.image
             continue
         }
         
-        if (previousLeafWasImage && !leaf.text.startsWith("\u200B")) {
-            newModel[write++] = { text: "\u200B" }
+        if (previousLeafWasImage && !leaf.text.startsWith("\uFEFF")) {
+            newModel[write++] = { text: "\uFEFF" }
         }
         
-        leaf.text = leaf.text.replace(/^\u200B+/, "")
+        leaf.text = leaf.text.replace(/^\uFEFF+/, "")
         
         newModel[write++] = leaf
         previousLeafWasImage = !!leaf.styles?.image
@@ -87,11 +88,11 @@ export function normalizeModel(newModel: Leaf[]): [number] {
 
     //     if (i + 1 < newModel.length && leaf.text == "\n") {
 
-    //         if (newModel[i + 1].text == '\u200B') {
+    //         if (newModel[i + 1].text == '\uFEFF') {
     //             i += 2
     //         }
     //         else {
-    //             leaf.text = "\n\u200B"
+    //             leaf.text = "\n\uFEFF"
     //             caretPositionShift += 1
     //         }
     //     }
