@@ -195,28 +195,85 @@ export default function Paragraph() {
         else {
             if ((e.key === "Backspace" || e.key === "Delete") && startLeafOffset == endLeafOffset) {
                 if (e.ctrlKey && newModel[startLeafIndex].text != "" && leafIndexText != '\n\uFEFF') {
-                    const firstHalf = newModel.slice(0, leafIndex + 1).flatMap(leaf => leaf.text).join("").slice(0, caretPosition.current)
-                    const newLineOffset = firstHalf.split('\n\uFEFF').reverse().filter(item => item !== "")[0].length
-                    const spaceLeafOffset = firstHalf.split(" ").reverse().filter(item => item !== "")[0].length
-                    const deletionOffset = Math.min(spaceLeafOffset, newLineOffset)
-                    const spacePosition = caretPosition.current - deletionOffset
-                    const spaceLeafIndex = getLeafIndexFromCaretPosition(spacePosition)
+                    if (e.key === "Delete") {
+                        // Ctrl+Delete: delete forward until the next space or newline,
+                        // even if that crosses multiple leaves.
 
-                    if (spaceLeafIndex < leafIndex) {
-                        // console.log("hiiii1" + newModel[spaceLeafIndex].text.slice(0, getLeafIndexFromCaretPosition(spacePosition, true)))
-                        // console.log("hiiii2" + leafIndexText.slice(startLeafOffset, leafIndexText.length)
-                        console.log("here")
-                        newModel[spaceLeafIndex].text = newModel[spaceLeafIndex].text.slice(0, getLeafIndexFromCaretPosition(spacePosition, true))
-                        newModel[leafIndex].text = leafIndexText.slice(startLeafOffset, leafIndexText.length).replace(/[\n\uFEFF ]/g, "")
+                        const fullText = newModel.flatMap(leaf => leaf.text).join("")
+                        const secondHalf = fullText.slice(caretPosition.current)
+
+                        const newlineIndex = secondHalf.indexOf('\n\uFEFF')
+                        const spaceIndex = secondHalf.indexOf(" ")
+
+                        const newLineOffset = newlineIndex === -1
+                            ? secondHalf.length
+                            : newlineIndex
+
+                        let spaceLeafOffset
+                        if (spaceIndex === -1) {
+                            spaceLeafOffset = secondHalf.length
+                        }
+                        else {
+                            const nextSpace = secondHalf.indexOf(" ", spaceIndex + 1)
+                            spaceLeafOffset = nextSpace === -1
+                                ? secondHalf.length
+                                : nextSpace
+                        }
+
+                        const deletionOffset = Math.min(spaceLeafOffset, newLineOffset)
+
+                        const deleteEnd = caretPosition.current + deletionOffset
+
+                        const deleteStartLeaf = leafIndex
+                        const deleteEndLeaf = getLeafIndexFromCaretPosition(deleteEnd)
+                        const deleteEndOffset = getLeafIndexFromCaretPosition(deleteEnd, true)
+
+                        if (deleteStartLeaf === deleteEndLeaf) {
+                            // Entire deletion is inside one leaf
+                            newModel[deleteStartLeaf].text =
+                                leafIndexText.slice(0, startLeafOffset) +
+                                leafIndexText.slice(deleteEndOffset)
+                        }
+                        else {
+                            // Delete across multiple leaves
+
+                            // Keep text before caret in starting leaf
+                            newModel[deleteStartLeaf].text =
+                                leafIndexText.slice(0, startLeafOffset)
+
+                            // Keep text after deletion point in ending leaf
+                            newModel[deleteEndLeaf].text =
+                                newModel[deleteEndLeaf].text.slice(deleteEndOffset)
+
+                            // Remove everything between start and end leaves
+                            newModel.splice(
+                                deleteStartLeaf + 1,
+                                deleteEndLeaf - deleteStartLeaf - 1
+                            )
+                        }
+                    } else {
+                        const firstHalf = newModel.flatMap(leaf => leaf.text).join("").slice(0, caretPosition.current)
+
+                        const newLineOffset = firstHalf.split('\n\uFEFF').reverse().filter(item => item !== "")[0].length
+                        const spaceLeafOffset = firstHalf.split(" ").reverse().filter(item => item !== "")[0].length
+                        const deletionOffset = Math.min(spaceLeafOffset, newLineOffset) // until it hits a newline character or a space whichever is closest
+                        const spacePosition = caretPosition.current - deletionOffset
+                        const spaceLeafIndex = getLeafIndexFromCaretPosition(spacePosition)
+
+                        if (spaceLeafIndex < leafIndex) {
+                            console.log("here")
+                            newModel[spaceLeafIndex].text = newModel[spaceLeafIndex].text.slice(0, getLeafIndexFromCaretPosition(spacePosition, true))
+                            newModel[leafIndex].text = leafIndexText.slice(startLeafOffset, leafIndexText.length).replace(/[\n\uFEFF ]/g, "")
+                        }
+                        else {
+                            console.log("right here")
+                            newModel[leafIndex].text = leafIndexText.slice(0, getLeafIndexFromCaretPosition(spacePosition, true)) + leafIndexText.slice(endLeafOffset, leafIndexText.length).replace(/[\n\uFEFF ]/g, "")
+                        }
+                        if (leafIndex - spaceLeafIndex > 1) {
+                            newModel.splice(spaceLeafIndex + 1, leafIndex - spaceLeafIndex - 1);
+                        }
+                        caretPosition.current = spacePosition
                     }
-                    else {
-                        console.log("right here")
-                        newModel[leafIndex].text = leafIndexText.slice(0, getLeafIndexFromCaretPosition(spacePosition, true)) + leafIndexText.slice(endLeafOffset, leafIndexText.length).replace(/[\n\uFEFF ]/g, "")
-                    }
-                    if (leafIndex - spaceLeafIndex > 1) {
-                        newModel.splice(spaceLeafIndex + 1, leafIndex - spaceLeafIndex - 1);
-                    }
-                    caretPosition.current = spacePosition
                 }
                 else {
                     console.log(leafIndexText)
@@ -289,7 +346,7 @@ export default function Paragraph() {
     function scrollToEnd() {
         const selection = window.getSelection()
         if (selection)
-        thisTextArea.current!.scrollTo({behavior : "smooth",top : selection.getRangeAt(0).getBoundingClientRect().top - thisTextArea.current!.getBoundingClientRect().top + thisTextArea.current!.scrollTop - 300})
+            thisTextArea.current!.scrollTo({ behavior: "smooth", top: selection.getRangeAt(0).getBoundingClientRect().top - thisTextArea.current!.getBoundingClientRect().top + thisTextArea.current!.scrollTop - 300 })
 
     }
 
@@ -452,7 +509,7 @@ export default function Paragraph() {
         const offsetNode = offset?.offsetNode.parentElement
         const flatDomRepresentation = Array.from(thisTextArea.current.querySelectorAll("[data-leaf]"))
         if (!offsetNode) return
-        
+
         const leafOffset = offset.offset
         let leafIndex = flatDomRepresentation.indexOf(offsetNode)
 
@@ -464,8 +521,8 @@ export default function Paragraph() {
         const imgIndex = newModel.map(el => el.id).findIndex(el => el == img.id)
         // console.log(flatDomRepresentation,newModel)
 
-        console.log(newModel.map(e => e.text ?? e.styles?.image),flatDomRepresentation.map(e => e instanceof HTMLSpanElement ? e.textContent : e))
-        console.log(newModel,flatDomRepresentation.map(e => e instanceof HTMLSpanElement ? e.textContent : e))
+        console.log(newModel.map(e => e.text ?? e.styles?.image), flatDomRepresentation.map(e => e instanceof HTMLSpanElement ? e.textContent : e))
+        console.log(newModel, flatDomRepresentation.map(e => e instanceof HTMLSpanElement ? e.textContent : e))
         // console.log(newModel.length, flatDomRepresentation.length, cachedText, leafIndex)
 
         if (newModel.length != flatDomRepresentation.length) {
