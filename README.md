@@ -32,6 +32,10 @@ Copyright © 2026 Bartkor.
 
 If you redistribute or modify Writiqo, please retain the original copyright and license notices.
 
+## Development
+
+Most code in this project is written by a human, and it has greatly evolved throughout its development, which is why a lot of the code isn't the cleanest it could be, this was a great albeit very challenging learning experience, and it has definitely taught me what I would do differently when designing a project of this complexity from the beginning.
+
 ---
 
 **Writiqo** - a rich text editor built from the ground up.
