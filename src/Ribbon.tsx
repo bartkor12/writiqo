@@ -16,7 +16,7 @@ function pressFlash(el: HTMLElement) {
 }
 
 function Dropdown({ children, id }: { children: ReactNode, id: string }) {
-    let dropdownClicked = false
+    let dropdownClicked = true
     const dropdownRef = useRef<HTMLDivElement>(null)
 
     function dropdownClick() {
