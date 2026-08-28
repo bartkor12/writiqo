@@ -816,7 +816,7 @@ body {
   align-items: center;
   gap: 5px;
   border: var(--body-dull) 2px solid;
-  background-image: url("back.svg");
+  background-image: url("/back.svg");
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
