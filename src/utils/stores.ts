@@ -9,6 +9,7 @@ type ModelStore = {
 export const modelStore = create<ModelStore>((set) => ({
     model: [
         { "text": "\u2060\u2060" },
+        { "text": "\u2060\u2060" }
         // ? DEBUG
         // { "text": "aaaa" },
         // { "text": "bbbb" },
