@@ -196,29 +196,21 @@ export default function Paragraph() {
             if ((e.key === "Backspace" || e.key === "Delete") && startLeafOffset == endLeafOffset) {
                 if (e.ctrlKey && newModel[startLeafIndex].text != "" && leafIndexText != '\n\uFEFF') {
                     if (e.key === "Delete") {
-                        // Ctrl+Delete: delete forward until the next space or newline,
-                        // even if that crosses multiple leaves.
 
                         const fullText = newModel.flatMap(leaf => leaf.text).join("")
                         const secondHalf = fullText.slice(caretPosition.current)
 
                         const newlineIndex = secondHalf.indexOf('\n\uFEFF')
                         const spaceIndex = secondHalf.indexOf(" ")
+                        console.log(spaceIndex,secondHalf[0])
 
                         const newLineOffset = newlineIndex === -1
                             ? secondHalf.length
                             : newlineIndex
 
-                        let spaceLeafOffset
-                        if (spaceIndex === -1) {
-                            spaceLeafOffset = secondHalf.length
-                        }
-                        else {
-                            const nextSpace = secondHalf.indexOf(" ", spaceIndex + 1)
-                            spaceLeafOffset = nextSpace === -1
-                                ? secondHalf.length
-                                : nextSpace
-                        }
+                        let spaceLeafOffset = spaceIndex === -1 ? secondHalf.length : spaceIndex
+
+                        caretPosition.current++
 
                         const deletionOffset = Math.min(spaceLeafOffset, newLineOffset)
 
@@ -229,23 +221,18 @@ export default function Paragraph() {
                         const deleteEndOffset = getLeafIndexFromCaretPosition(deleteEnd, true)
 
                         if (deleteStartLeaf === deleteEndLeaf) {
-                            // Entire deletion is inside one leaf
                             newModel[deleteStartLeaf].text =
                                 leafIndexText.slice(0, startLeafOffset) +
                                 leafIndexText.slice(deleteEndOffset)
                         }
                         else {
-                            // Delete across multiple leaves
 
-                            // Keep text before caret in starting leaf
                             newModel[deleteStartLeaf].text =
                                 leafIndexText.slice(0, startLeafOffset)
 
-                            // Keep text after deletion point in ending leaf
                             newModel[deleteEndLeaf].text =
                                 newModel[deleteEndLeaf].text.slice(deleteEndOffset)
 
-                            // Remove everything between start and end leaves
                             newModel.splice(
                                 deleteStartLeaf + 1,
                                 deleteEndLeaf - deleteStartLeaf - 1
@@ -293,6 +280,8 @@ export default function Paragraph() {
             }
             else if (e.ctrlKey && e.key.toLowerCase() === "z") {
                 e.preventDefault()
+                console.log("undo model")
+                console.log(undoModel)
 
                 if (e.shiftKey) {
                     // redo

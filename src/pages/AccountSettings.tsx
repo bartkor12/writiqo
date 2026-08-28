@@ -1,6 +1,7 @@
-import Avatar from "react-avatar";
+import { useNavigate } from "react-router";
+import { supabase } from "../supabase";
 import { authStore } from "../utils/stores";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export default function AccountSettings() {
     const email = authStore(s => s.session)?.user?.email ?? "default"
@@ -16,22 +17,14 @@ export default function AccountSettings() {
         }}>
             <div className="accountSettings">
                 <div className="personalData">
-
-                    <div>
-                        <Avatar name={email} className="bigavatarpfp" size="200" />
-                    </div>
+                    <span style={{ fontSize: 40, fontFamily: "Inter Tight" }}>Account Settings</span>
                     <div className="settingsInputs">
-                        <div>
-                            <TextInput name="Email" type="email" />
-                            <TextInput name="Password" type="password" />
-                        </div>
-                        <div>
-                            <TextInput name="Username" type="text" />
-                            <button className="logoutButton">
-                                <img src="logout.svg" alt="" />
-                                Logout
-                            </button>
-                        </div>
+                        <TextInput name="Email" type="email" />
+                        <TextInput name="Password" type="password" />
+                        <TextInput name="Username" type="text" />
+                        <ImportantButton type="logout" />
+                        <ImportantButton type="delete" />
+                        <ImportantButton type="save and return" />
                     </div>
                 </div>
             </div>
@@ -39,12 +32,53 @@ export default function AccountSettings() {
     )
 }
 
-function TextInput({ name, type }: { name: string, type : string }) {
+function TextInput({ name, type }: { name: string, type: string }) {
 
     return (
         <div className="settingsTextInput">
             <span>{name}</span>
             <input type={type} />
         </div>
+    )
+}
+
+function ImportantButton({ type }: { type: string }) {
+    const [text, setText] = useState(type[0].toUpperCase() + type.slice(1))
+    const clicked = useRef<boolean>(false)
+    const timeoutId = useRef<number>(0)
+    const navigate = useNavigate()
+
+    async function onClick() {
+        if (clicked.current) {
+            if (type == "logout") {
+                await supabase.auth.signOut()
+                setText("Logged out")
+                navigate("/")
+            }
+            else if (type == "delete") {
+                setText("Account deleted")
+                // ! IMPORTANT add GDPR compliance with delete account feature, possibly use edge functions
+            }
+            else {
+                setText("Saved")
+                navigate("/")
+            }
+            clearTimeout(timeoutId.current)
+        }
+        else {
+            clicked.current = true
+            setText("Are you sure?")
+            timeoutId.current = setTimeout(() => {
+                setText(type[0].toUpperCase() + type.slice(1))
+                clicked.current = false
+            }, 3000)
+        }
+    }
+
+    return (
+        <button className="logoutButton" onClick={onClick}>
+            <img src={type + ".svg"} alt="" />
+            {text}
+        </button>
     )
 }
