@@ -69,8 +69,8 @@ function Export({ cloud }: { cloud: boolean }) {
                 const modelForExport: ExportedModel = {
                     "name": fileName,
                     "version": 1,
-                    "word_count": document.getElementById("textInputDiv")?.textContent.length ?? 0,
-                    summary: document.getElementById("textInputDiv")?.textContent.slice(0, 30) ?? "",
+                    "word_count": document.getElementById("textInputDiv")?.textContent?.length ?? 0,
+                    summary: document.getElementById("textInputDiv")?.textContent?.slice(0, 30) ?? "",
                     model: compressModel()
                 }
 
@@ -175,7 +175,7 @@ export default function Ribbon() {
         </div>
         <div id="ribbonWrapper">
             <div id="ribbon">
-                <img src="writiqo_inkscape.svg" className='icon' onMouseDown={e => e.preventDefault()} style={{marginRight : 60}} />
+                <img src="/writiqo_inkscape.svg" className='icon' onMouseDown={e => e.preventDefault()} style={{marginRight : 60}} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     <span className="descriptor">Text Modifications</span>
                     <div style={{ display: "flex", gap: 5 }}>
@@ -283,7 +283,7 @@ function FontDropdownContainer() {
                 <input type="text" onInput={fontDropdownInput} onKeyDown={fontDropdownKeydown} ref={fontInputRef} />
                 {/* <img src="arrow_down.svg" alt="" /> */}
                 <button className="formatButton" onClick={fontDropdownClick}>
-                    <img src="checkmark.svg" alt="" />
+                    <img src="/checkmark.svg" alt="" />
                 </button>
             </div>
             <div className="fontDropdown">
@@ -418,7 +418,7 @@ function FormatSlider({ style, type, unit, min, max, sensitivity }: {
     return (
         <div onLoad={() => {if (style == "fontSize" ) setValue(32)}} style={{ display: "flex", position: "relative" }} className="formatSlider formatContainer">
             {type == "horizontal" &&
-                <img onClick={onClick} src="format_letter_spacing.svg" alt="" />
+                <img onClick={onClick} src="/format_letter_spacing.svg" alt="" />
             }
             <input type="number" value={value}
                 onInput={e => updateValue(Number(e.currentTarget.value))}
@@ -430,8 +430,8 @@ function FormatSlider({ style, type, unit, min, max, sensitivity }: {
             <span>{unit}</span>
             {type == "vertical" &&
                 <div className="verticalSliderSpins">
-                    <img onClick={() => updateValue(value + 1)} src="spin_arrow_up.svg" alt="" />
-                    <img onClick={() => updateValue(value - 1)} src="spin_arrow_down.svg" alt="" />
+                    <img onClick={() => updateValue(value + 1)} src="/spin_arrow_up.svg" alt="" />
+                    <img onClick={() => updateValue(value - 1)} src="/spin_arrow_down.svg" alt="" />
                 </div>
             }
         </div>
