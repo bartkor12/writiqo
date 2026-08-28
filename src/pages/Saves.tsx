@@ -14,6 +14,7 @@ type ImportedModel = {
 }
 
 export default function Saves() {
+    const navigate = useNavigate()
     const [saves, setSaves] = useState<ImportedModel[]>()
 
     useEffect(() => {
@@ -31,7 +32,11 @@ export default function Saves() {
 
     return (
         <div className="centerSavesDiv">
-            <span className="savesTitle">Your saved documents</span>
+            <div className="savesHeader">
+                <button className="newSaveButton" onClick={() => navigate("/")} />
+                <span className="savesTitle">Your saved documents</span>
+            </div>
+    
             <div className="saves">
                 {!saves ? (
                     <>
@@ -42,9 +47,8 @@ export default function Saves() {
                         <LoadingCard />
                         <LoadingCard />
                     </>
-                )
-                    : null
-                }
+                ) : null}
+    
                 {saves?.map(save => (
                     <SaveCard metadata={save} key={save.id} />
                 ))}

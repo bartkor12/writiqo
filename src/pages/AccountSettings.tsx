@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 
 export default function AccountSettings() {
     const email = authStore(s => s.session)?.user?.email ?? "default"
+    const username = authStore(s => s.session)?.user.user_metadata.display_name
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
     function onMouseMove(e: React.MouseEvent<HTMLDivElement>) {
@@ -19,9 +20,9 @@ export default function AccountSettings() {
                 <div className="personalData">
                     <span style={{ fontSize: 40, fontFamily: "Inter Tight" }}>Account Settings</span>
                     <div className="settingsInputs">
-                        <TextInput name="Email" type="email" />
+                        <TextInput name="Email" type="email" placeholder={email ?? "Email"} />
                         <TextInput name="Password" type="password" />
-                        <TextInput name="Username" type="text" />
+                        <TextInput name="Username" type="text" placeholder={username ?? "Username"} />
                         <ImportantButton type="logout" />
                         <ImportantButton type="delete" />
                         <ImportantButton type="save and return" />
@@ -32,12 +33,12 @@ export default function AccountSettings() {
     )
 }
 
-function TextInput({ name, type }: { name: string, type: string }) {
+function TextInput({ name, type, placeholder }: { name: string, type: string, placeholder?: string }) {
 
     return (
         <div className="settingsTextInput">
             <span>{name}</span>
-            <input type={type} />
+            <input type={type} placeholder={placeholder ?? name} id={name} />
         </div>
     )
 }
@@ -54,14 +55,48 @@ function ImportantButton({ type }: { type: string }) {
                 await supabase.auth.signOut()
                 setText("Logged out")
                 navigate("/")
+                window.location.reload()
             }
             else if (type == "delete") {
+                const { error } = await supabase.functions.invoke("delete-account")
+
+                if (error) {
+                    console.error(error);
+                } else {
+                    await supabase.auth.signOut();
+                }
                 setText("Account deleted")
-                // ! IMPORTANT add GDPR compliance with delete account feature, possibly use edge functions
+                navigate("/")
+                window.location.reload()
             }
             else {
+                const email = (document.getElementById("Email") as HTMLInputElement)?.value
+                const password = (document.getElementById("Password") as HTMLInputElement)?.value
+                const username = (document.getElementById("Username") as HTMLInputElement)?.value
+
+                if (password != "" && password.length < 10) {
+                    setText("Password must be at least 10 characters long")
+                    return
+                }
+                if (email != "" && !email.includes("@")) {
+                    setText("Invalid email")
+                    return
+                }
+
                 setText("Saved")
+                supabase.auth.updateUser({
+                    ...(email != "" && { email : email }),
+                    ...((password != "" && password.length > 10) && { password : password }),
+                    ...(username != "" && {
+                        data: {
+                            display_name: username
+                        }
+                    }),
+
+                })
+
                 navigate("/")
+                window.location.reload()
             }
             clearTimeout(timeoutId.current)
         }

@@ -3,6 +3,7 @@ import { useState } from "react"
 import { supabase } from "../supabase"
 import Swal from "sweetalert2"
 import { useNavigate } from "react-router"
+import type { Provider } from "@supabase/supabase-js"
 
 export default function Login() {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
@@ -38,7 +39,7 @@ export default function Login() {
 
         console.log(error)
 
-        if (error) {
+        if (error) {    
             Swal.fire({
                 title: "Try again.",
                 icon: "error",
@@ -50,6 +51,7 @@ export default function Login() {
         console.log("hia")
 
         navigate("/")
+        window.location.reload()
     }
 
     return (
@@ -73,9 +75,6 @@ export default function Login() {
                 </form>
                 <hr />
                 <OauthButton provider="Google" />
-                <OauthButton provider="Microsoft" />
-                <OauthButton provider="Github" />
-                <OauthButton provider="Gitlab" />
                 <OauthButton provider="Discord" />
                 <button onClick={switchLoginMode} className="signUpButton">{isLoginMode ? "Don't have an account? Sign up" : "Already have an account? Log in"}</button>
             </div>
@@ -85,8 +84,17 @@ export default function Login() {
 
 function OauthButton({ provider }: { provider: string }) {
 
+    function onClick() {
+        supabase.auth.signInWithOAuth({
+            provider: provider.toLowerCase() as Provider,
+            options: {
+                redirectTo: window.location.origin + "/",
+            }
+        })
+    }
+
     return (
-        <div className="oauth">
+        <div className="oauth" onClick={onClick}>
             <img src={provider.toLowerCase() + ".svg"} alt="" />
             <span>Continue with {provider} </span>
         </div>
